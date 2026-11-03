@@ -85,6 +85,7 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
 .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:13px;font-weight:600;}
 .pill-g{background:rgba(0,229,160,0.12);color:var(--green);}
 .pill-r{background:rgba(255,107,107,0.12);color:var(--red);}
+.pill-pz{background:rgba(200,216,234,0.10);color:var(--sub);}
 .sortable{cursor:pointer;user-select:none;white-space:nowrap;}
 .sortable:hover{color:var(--text);}
 .sa{font-size:12px;color:var(--sub2);margin-left:3px;} .sa.on{color:var(--cyan);}
@@ -261,6 +262,11 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
   </div>
 
   <p class="sec" style="margin-top:22px">Detalhamento por Criativo</p>
+  <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap" id="cr-filter">
+    <button class="f-btn active" onclick="setCrFilter('todos',this)">Todos <span id="crf-todos"></span></button>
+    <button class="f-btn" onclick="setCrFilter('ACTIVE',this)">Ativos <span id="crf-ativo"></span></button>
+    <button class="f-btn" onclick="setCrFilter('PAUSED',this)">Pausados <span id="crf-paus"></span></button>
+  </div>
   <div class="tbl-card">
     <table>
       <thead><tr>
@@ -272,7 +278,7 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
         <th class="td-r sortable" onclick="sortBy('cr','lp')">Vis. LP <span class="sa">↕</span></th>
         <th class="td-r sortable" onclick="sortBy('cr','leads')">Leads <span class="sa">↕</span></th>
         <th class="td-r sortable" onclick="sortBy('cr','cpl')">CPL <span class="sa">↕</span></th>
-        <th>Anúncio</th>
+        <th>Status</th><th>Anúncio</th>
       </tr></thead>
       <tbody id="cr-tbody"></tbody>
       <tfoot id="cr-tfoot"></tfoot>
@@ -352,8 +358,9 @@ function updGauge(id,pct){ const v=Math.max(0.5,Math.min(100,pct)); ch[id].data.
 
 /* ===== AGG ===== */
 function sum(rows){ return rows.reduce((a,r)=>({invest:a.invest+r.invest,imp:a.imp+r.imp,clicks:a.clicks+r.clicks,leads:a.leads+r.leads,lp:a.lp+r.lp}),{invest:0,imp:0,clicks:0,leads:0,lp:0}); }
-function groupBy(rows,key){ const m={}; rows.forEach(r=>{const k=r[key];if(!m[k])m[k]={key:k,pub:r.pub,invest:0,imp:0,clicks:0,leads:0,lp:0,url:r.url};
-  m[k].invest+=r.invest;m[k].imp+=r.imp;m[k].clicks+=r.clicks;m[k].leads+=r.leads;m[k].lp+=r.lp; if(!m[k].url&&r.url)m[k].url=r.url;}); return m; }
+function groupBy(rows,key){ const m={}; rows.forEach(r=>{const k=r[key];if(!m[k])m[k]={key:k,pub:r.pub,invest:0,imp:0,clicks:0,leads:0,lp:0,url:r.url,_dt:null,status:''};
+  m[k].invest+=r.invest;m[k].imp+=r.imp;m[k].clicks+=r.clicks;m[k].leads+=r.leads;m[k].lp+=r.lp; if(!m[k].url&&r.url)m[k].url=r.url;
+  if(r.status&&(!m[k]._dt||r.dt>=m[k]._dt)){m[k]._dt=r.dt;m[k].status=r.status;}}); return m; }
 function dayMap(rows,dates){ const m={}; dates.forEach(d=>m[d]={invest:0,imp:0,clicks:0,leads:0,lp:0});
   rows.forEach(r=>{if(m[r.date]){m[r.date].invest+=r.invest;m[r.date].imp+=r.imp;m[r.date].clicks+=r.clicks;m[r.date].leads+=r.leads;m[r.date].lp+=r.lp;}}); return m; }
 
@@ -458,25 +465,36 @@ function render(){
 
 function shortCamp(c){ return c.replace(/^PA_FB\d+_Cadastros_/,'').replace(/_Q$/,'').replace(/_/g,' '); }
 
+let crStatusFilter='todos';
+function setCrFilter(f,btn){ crStatusFilter=f; document.querySelectorAll('#cr-filter .f-btn').forEach(b=>b.classList.remove('active')); if(btn)btn.classList.add('active'); render(); }
 function renderTable(which,groups){
   const st=sortState[which];
   let arr=Object.values(groups).map(g=>({...g, ctr:g.imp>0?g.clicks/g.imp*100:0, cpl:g.leads>0?g.invest/g.leads:null}));
   arr.sort((a,b)=>{ let av=a[st.col],bv=b[st.col]; if(st.col==='cpl'){av=av==null?1e9:av;bv=bv==null?1e9:bv;} return (av-bv)*st.dir; });
+  if(which==='cr'){
+    const nAll=arr.length, nAct=arr.filter(g=>g.status==='ACTIVE').length, nPaus=arr.filter(g=>g.status==='PAUSED').length;
+    set('crf-todos','('+nAll+')'); set('crf-ativo','('+nAct+')'); set('crf-paus','('+nPaus+')');
+    if(crStatusFilter!=='todos') arr=arr.filter(g=>g.status===crStatusFilter);
+  }
   const tb=R(which+'-tbody'); tb.innerHTML='';
   arr.forEach(g=>{
     const tr=document.createElement('tr');
     const name = which==='camp' ? `<td style="font-weight:600">${shortCamp(g.key)}</td><td class="td-pub">${(g.pub||'').replace('Conjunto ','')}</td>`
                                 : `<td class="td-criativo">${prettyCr(g.key)}</td><td class="td-pub">${(g.pub||'').replace('Conjunto ','')}</td>`;
     const cplCell = g.cpl==null?'<span style="color:var(--sub)">—</span>':`<span class="pill ${g.cpl<=METAS.cplQuente?'pill-g':'pill-r'}">${fmtR(g.cpl)}</span>`;
-    const igCell = which==='cr' ? `<td>${g.url?`<a class="ig-btn" href="${fixIg(g.url)}" target="_blank">${igIcon} Ver</a>`:'—'}</td>` : '';
-    tr.innerHTML=`${name}<td class="td-r">${fmtR(g.invest)}</td><td class="td-r">${fmtN(g.imp)}</td><td class="td-r">${fmtN(g.clicks)}</td><td class="td-r">${g.imp>0?(g.clicks/g.imp*100).toFixed(2)+'%':'—'}</td><td class="td-r">${fmtN(g.lp)}</td><td class="td-r" style="font-weight:700;color:var(--green)">${fmtN(g.leads)}</td><td class="td-r">${cplCell}</td>${igCell}`;
+    let tail='';
+    if(which==='cr'){
+      const stPill = g.status==='ACTIVE'?'<span class="pill pill-g">Ativo</span>':(g.status==='PAUSED'?'<span class="pill pill-pz">Pausado</span>':'<span style="color:var(--sub2)">—</span>');
+      const ig = g.url?`<a class="ig-btn" href="${fixIg(g.url)}" target="_blank">${igIcon} Ver</a>`:'—';
+      tail=`<td>${stPill}</td><td>${ig}</td>`;
+    }
+    tr.innerHTML=`${name}<td class="td-r">${fmtR(g.invest)}</td><td class="td-r">${fmtN(g.imp)}</td><td class="td-r">${fmtN(g.clicks)}</td><td class="td-r">${g.imp>0?(g.clicks/g.imp*100).toFixed(2)+'%':'—'}</td><td class="td-r">${fmtN(g.lp)}</td><td class="td-r" style="font-weight:700;color:var(--green)">${fmtN(g.leads)}</td><td class="td-r">${cplCell}</td>${tail}`;
     tb.appendChild(tr);
   });
   const t=arr.reduce((a,g)=>({invest:a.invest+g.invest,imp:a.imp+g.imp,clicks:a.clicks+g.clicks,leads:a.leads+g.leads,lp:a.lp+g.lp}),{invest:0,imp:0,clicks:0,leads:0,lp:0});
   const cpl=t.leads>0?t.invest/t.leads:null;
-  const extra= which==='cr'?'<td></td>':'';
+  const extra= which==='cr'?'<td></td><td></td>':'';
   R(which+'-tfoot').innerHTML=`<tr><td>TOTAL</td><td></td><td class="td-r">${fmtR(t.invest)}</td><td class="td-r">${fmtN(t.imp)}</td><td class="td-r">${fmtN(t.clicks)}</td><td class="td-r">${t.imp>0?(t.clicks/t.imp*100).toFixed(2)+'%':'—'}</td><td class="td-r">${fmtN(t.lp)}</td><td class="td-r" style="color:var(--green)">${fmtN(t.leads)}</td><td class="td-r">${cpl?fmtR(cpl):'—'}</td>${extra}</tr>`;
-  updSortUI(which);
 }
 function prettyCr(s){ return s.replace(/^AD(\d+)_IMG_/,'AD$1 · ').replace(/^AD(\d+)_VID_/,'AD$1 · ').replace(/_/g,' '); }
 function fixIg(u){ u=String(u||''); if(u.endsWith('...')) return 'https://www.instagram.com/'; return u; }
@@ -513,11 +531,11 @@ function loadCap(txt){
   const rows=parseCSV(txt); if(!rows.length)return;
   const head=rows[0].map(h=>h.trim().toLowerCase());
   const idx=n=>head.findIndex(h=>h.startsWith(n));
-  const iDate=idx('date'),iCamp=idx('campanha'),iPub=idx('publico'),iCr=idx('criativo'),iUrl=idx('url'),iInv=idx('investido'),iImp=idx('impress'),iCli=idx('clique'),iLead=idx('lead'),iLp=idx('visual');
+  const iDate=idx('date'),iCamp=idx('campanha'),iPub=idx('publico'),iCr=idx('criativo'),iUrl=idx('url'),iInv=idx('investido'),iImp=idx('impress'),iCli=idx('clique'),iLead=idx('lead'),iLp=idx('visual'),iSt=idx('status');
   ROWS=[];
   for(let i=1;i<rows.length;i++){ const r=rows[i]; if(!r||!r[iDate])continue; const dd=parseBRDate(r[iDate]); if(!dd)continue;
     ROWS.push({date:dd.label,dkey:dd.key,dt:dd.dt,camp:(r[iCamp]||'').trim(),pub:(r[iPub]||'').trim(),criativo:(r[iCr]||'').trim(),url:(r[iUrl]||'').trim(),
-      invest:num(r[iInv]),imp:num(r[iImp]),clicks:num(r[iCli]),leads:num(r[iLead]),lp:num(r[iLp])});
+      invest:num(r[iInv]),imp:num(r[iImp]),clicks:num(r[iCli]),leads:num(r[iLead]),lp:num(r[iLp]),status:(iSt>=0?(r[iSt]||'').trim().toUpperCase():'')});
   }
   const seen={}; ALL_DATES=[]; ROWS.slice().sort((a,b)=>a.dt-b.dt).forEach(r=>{if(!seen[r.date]){seen[r.date]=1;ALL_DATES.push(r.date);}});
   LATEST=ROWS.length?new Date(Math.max(...ROWS.map(r=>r.dt))):null;
