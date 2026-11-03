@@ -420,7 +420,7 @@ function render(){
       {label:'Leads',data:leadsDay,backgroundColor:C.green,borderRadius:{topLeft:5,topRight:5},yAxisID:'yL',order:2},
     ]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10,padding:12}}},
-      scales:{x:{grid:{color:C.grid}},yL:{position:'left',grid:{color:C.grid},ticks:{precision:0}},yCPL:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>'R$ '+v,color:C.orange}}}}
+      scales:{x:{grid:{color:C.grid}},yL:{position:'left',grid:{color:C.grid},ticks:{precision:0}},yCPL:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>'R$ '+Number(v).toFixed(2).replace('.',','),color:C.orange}}}}
   });
 
   // Donut por campanha (investimento)
@@ -446,7 +446,7 @@ function render(){
       {label:'CTR (%)',data:ctrDay,borderColor:C.cyan,pointBackgroundColor:C.cyan,pointRadius:3,tension:0.4,yAxisID:'yCTR',spanGaps:true},
     ]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10,padding:12}}},
-      scales:{x:{grid:{color:C.grid}},yCPM:{position:'left',grid:{color:C.grid},ticks:{callback:v=>'R$ '+v,color:C.orange}},yCTR:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%',color:C.cyan}}}}
+      scales:{x:{grid:{color:C.grid}},yCPM:{position:'left',grid:{color:C.grid},ticks:{callback:v=>'R$ '+Number(v).toFixed(2).replace('.',','),color:C.orange}},yCTR:{position:'right',grid:{drawOnChartArea:false},ticks:{callback:v=>Number(v).toFixed(1)+'%',color:C.cyan}}}}
   });
   set('q-cpm', t.imp>0?fmtR(t.invest/t.imp*1000):'—');
   set('q-ctr', t.imp>0?(t.clicks/t.imp*100).toFixed(2)+'%':'—');
