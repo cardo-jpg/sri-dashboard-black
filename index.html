@@ -143,39 +143,6 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
   <div class="gauge-outer">
     <p class="sec">Progresso da Captação</p>
     <div class="gauge-grid">
-      <div class="gauge-card gc-green">
-        <p class="gauge-ttl">Leads de Tráfego</p>
-        <div class="gauge-canvas-wrap"><canvas id="g-trafego"></canvas>
-          <div class="gauge-overlay"><div class="gauge-pct green" id="gv-traf">—</div><div class="gauge-pct-lbl">da meta</div></div>
-        </div>
-        <div class="gauge-range"><span id="gs-traf-atual">—</span><span id="gs-traf-meta">Meta: —</span></div>
-        <div class="gauge-stats">
-          <div><span>Média/dia</span><strong id="gs-traf-media">—</strong></div>
-          <div><span>Faltam</span><strong class="pace-val" id="gs-traf-falta">—</strong></div>
-        </div>
-      </div>
-      <div class="gauge-card gc-cyan">
-        <p class="gauge-ttl">Investimento</p>
-        <div class="gauge-canvas-wrap"><canvas id="g-invest"></canvas>
-          <div class="gauge-overlay"><div class="gauge-pct cyan" id="gv-inv">—</div><div class="gauge-pct-lbl">do orçamento</div></div>
-        </div>
-        <div class="gauge-range"><span id="gs-inv-atual">—</span><span id="gs-inv-meta">Meta: —</span></div>
-        <div class="gauge-stats">
-          <div><span>Restante</span><strong id="gs-inv-rest">—</strong></div>
-          <div><span>Gasto/dia</span><strong class="pace-val" id="gs-inv-dia">—</strong></div>
-        </div>
-      </div>
-      <div class="gauge-card gc-purple">
-        <p class="gauge-ttl">CPL de Tráfego</p>
-        <div class="gauge-canvas-wrap"><canvas id="g-cpl"></canvas>
-          <div class="gauge-overlay"><div class="gauge-pct purple" id="gv-cpl">—</div><div class="gauge-pct-lbl">vs meta</div></div>
-        </div>
-        <div class="gauge-range"><span id="gs-cpl-atual">—</span><span id="gs-cpl-meta">Meta: —</span></div>
-        <div class="gauge-stats">
-          <div><span>Status</span><strong id="gs-cpl-status">—</strong></div>
-          <div><span>Melhor dia</span><strong id="gs-cpl-best">—</strong></div>
-        </div>
-      </div>
       <div class="gauge-card gc-orange">
         <p class="gauge-ttl">Captação Geral</p>
         <div class="gauge-canvas-wrap"><canvas id="g-geral"></canvas>
@@ -187,13 +154,52 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
           <div><span>Orgânico</span><strong id="gs-geral-org">—</strong></div>
         </div>
       </div>
+      <div class="gauge-card gc-green">
+        <p class="gauge-ttl">Orgânico</p>
+        <div class="gauge-canvas-wrap"><canvas id="g-organico"></canvas>
+          <div class="gauge-overlay"><div class="gauge-pct green" id="gv-org">—</div><div class="gauge-pct-lbl">da meta</div></div>
+        </div>
+        <div class="gauge-range"><span id="gs-org-atual">—</span><span id="gs-org-meta">Meta: —</span></div>
+        <div class="gauge-stats">
+          <div><span>Média/dia</span><strong id="gs-org-media">—</strong></div>
+          <div><span>Faltam</span><strong class="pace-val" id="gs-org-falta">—</strong></div>
+        </div>
+      </div>
+      <div class="gauge-card gc-cyan">
+        <p class="gauge-ttl">Leads de Tráfego</p>
+        <div class="gauge-canvas-wrap"><canvas id="g-trafego"></canvas>
+          <div class="gauge-overlay"><div class="gauge-pct cyan" id="gv-traf">—</div><div class="gauge-pct-lbl">da meta</div></div>
+        </div>
+        <div class="gauge-range"><span id="gs-traf-atual">—</span><span id="gs-traf-meta">Meta: —</span></div>
+        <div class="gauge-stats">
+          <div><span>Média/dia</span><strong id="gs-traf-media">—</strong></div>
+          <div><span>CPL</span><strong id="gs-traf-cpl">—</strong></div>
+        </div>
+      </div>
+      <div class="gauge-card gc-purple">
+        <p class="gauge-ttl">Grupo VIP (WhatsApp)</p>
+        <div class="gauge-canvas-wrap"><canvas id="g-grupo"></canvas>
+          <div class="gauge-overlay"><div class="gauge-pct purple" id="gv-grupo">—</div><div class="gauge-pct-lbl">da meta</div></div>
+        </div>
+        <div class="gauge-range"><span id="gs-grupo-atual">—</span><span id="gs-grupo-meta">Meta: 2.000</span></div>
+        <div class="gauge-stats">
+          <div><span>No grupo</span><strong id="gs-grupo-tot">—</strong></div>
+          <div><span>Faltam</span><strong class="pace-val" id="gs-grupo-falta">—</strong></div>
+        </div>
+      </div>
     </div>
-    <p style="font-size:11px;color:var(--sub);margin:12px 0 0;font-style:italic">Meta geral = tráfego + orgânico. O orgânico é contado fora desta planilha; enquanto não vier, a "Captação Geral" considera só o tráfego. Edite a aba <b>Metas</b> para ajustar os alvos.</p>
+    <p style="font-size:11px;color:var(--sub);margin:12px 0 0;font-style:italic">Captação Geral = total da Active Campaign (aba <b>Captacao Organico</b>). Orgânico = total − tráfego (leads pagos). Grupo VIP = pessoas no WhatsApp (meta 2.000). Investido e CPL ficam nos cartões abaixo. Metas na aba <b>Metas</b>.</p>
   </div>
 </div>
 
 <div class="container">
-  <p class="sec" style="padding-top:8px">Visão Geral · Tráfego de Captação</p>
+  <p class="sec" style="padding-top:8px">Captação por Dia · Orgânico + Tráfego</p>
+  <div class="chart-card" style="margin-bottom:22px;">
+    <p class="chart-ttl">Novos leads por dia</p>
+    <p class="chart-sub">Empilhado: orgânico (verde) + tráfego (ciano) — novos por dia a partir do total da Active Campaign</p>
+    <div class="chart-wrap h240"><canvas id="c-capt-day"></canvas></div>
+  </div>
+  <p class="sec">Visão Geral · Tráfego de Captação</p>
   <div class="kpi-grid">
     <div class="kpi c-cyan"><p class="kpi-lbl">Investido</p><p class="kpi-val cyan" id="k-inv">—</p><p class="kpi-note" id="k-inv-n">—</p></div>
     <div class="kpi c-green"><p class="kpi-lbl">Leads</p><p class="kpi-val green" id="k-leads">—</p><p class="kpi-note" id="k-leads-n">—</p></div>
@@ -294,8 +300,9 @@ const SHEET_ID='1tQbn-0KWooADQ-FwaFI0lx6ajplN1MCVVXXisvWC29Q';
 const GVT=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
 const TAB_CAP='Facebook Captacao';
 const TAB_METAS='Metas';
+const TAB_ORG='Captacao Organico';
 /* Metas fallback (se a aba nao carregar) */
-const META_FALLBACK={cplQuente:2.20, total:3120, organico:1500, trafego:1620, invest:3564};
+const META_FALLBACK={cplQuente:2.20, total:3120, organico:1500, trafego:1620, invest:3564, grupo:2000};
 
 Chart.register(ChartDataLabels);
 Chart.defaults.set('plugins.datalabels',{display:false});
@@ -328,7 +335,8 @@ let ROWS=[];               // {date:'DD/MM', dkey:'YYYY-MM-DD', dt:Date, camp, p
 let ALL_DATES=[];          // ['DD/MM'...] ordenadas
 let LATEST=null;
 let METAS={...META_FALLBACK};
-let ORG_LEADS=0;           // orgânico (se vier via aba Metas futuramente)
+let ORG_ROWS=[];           // {date,dt,ac,wa} acumulados (aba Captacao Organico)
+let AC_TOTAL=0, WA_TOTAL=0, ORG_DAYS=0;   // total captado (Active Campaign), total grupo (Whatsapp), dias com dado
 let currentNDays=null, customFilterDates=null;
 const sortState={camp:{col:'leads',dir:-1}, cr:{col:'leads',dir:-1}};
 const ch={};
@@ -387,35 +395,48 @@ function render(){
   // GAUGES (sempre sobre o TOTAL, nao filtrado)
   const tot=sum(ROWS);
   const nDaysTot=ALL_DATES.length||1;
-  // Tráfego
-  const pctTraf=METAS.trafego>0?+(tot.leads/METAS.trafego*100).toFixed(1):0;
-  updGauge('g-trafego',pctTraf); set('gv-traf',pctTraf.toFixed(1).replace('.',',')+'%');
-  set('gs-traf-atual',fmtN(tot.leads)); set('gs-traf-meta','Meta: '+fmtN(METAS.trafego));
-  set('gs-traf-media',(tot.leads/nDaysTot).toFixed(1));
-  set('gs-traf-falta', Math.max(0,METAS.trafego-tot.leads)>0?fmtN(METAS.trafego-tot.leads):'✓');
-  // Investimento
-  const pctInv=METAS.invest>0?+(tot.invest/METAS.invest*100).toFixed(1):0;
-  updGauge('g-invest',pctInv); set('gv-inv',pctInv.toFixed(0)+'%');
-  set('gs-inv-atual',fmtR(tot.invest)); set('gs-inv-meta','Meta: '+fmtR(METAS.invest));
-  set('gs-inv-rest',fmtR(Math.max(0,METAS.invest-tot.invest)));
-  set('gs-inv-dia',fmtR(tot.invest/nDaysTot));
-  // CPL (gauge = meta/atual, >100% = abaixo da meta = bom)
-  const cplTot=tot.leads>0?tot.invest/tot.leads:null;
-  const pctCpl=cplTot?Math.min(100,+(METAS.cplQuente/cplTot*100).toFixed(1)):0;
-  updGauge('g-cpl',pctCpl); set('gv-cpl', cplTot?fmtR(cplTot):'—');
-  set('gs-cpl-atual', cplTot?('Atual '+fmtR(cplTot)):'—'); set('gs-cpl-meta','Meta: '+fmtR(METAS.cplQuente));
-  set('gs-cpl-status', cplTot?(cplTot<=METAS.cplQuente?'✓ dentro':'⚠ acima'):'—');
-  R('gs-cpl-status').style.color=cplTot?(cplTot<=METAS.cplQuente?'var(--green)':'var(--red)'):'var(--sub)';
-  // melhor dia (menor CPL com leads)
-  const dm=dayMap(ROWS,ALL_DATES); let best=null,bestv=1e9;
-  ALL_DATES.forEach(d=>{const x=dm[d];if(x.leads>0){const cp=x.invest/x.leads;if(cp<bestv){bestv=cp;best=d;}}});
-  set('gs-cpl-best', best?best+' · '+fmtR(bestv):'—');
-  // Geral
-  const geral=tot.leads+ORG_LEADS;
+  const paid=tot.leads;                      // leads de tráfego (pagos)
+  const geral=AC_TOTAL>0?AC_TOTAL:paid;      // total captado (Active Campaign), ou fallback no pago
+  const org=Math.max(0, geral-paid);         // orgânico = total − tráfego
+  // Captação Geral
   const pctGer=METAS.total>0?+(geral/METAS.total*100).toFixed(1):0;
   updGauge('g-geral',pctGer); set('gv-geral',pctGer.toFixed(1).replace('.',',')+'%');
   set('gs-geral-atual',fmtN(geral)); set('gs-geral-meta','Meta: '+fmtN(METAS.total));
-  set('gs-geral-traf',fmtN(tot.leads)); set('gs-geral-org',ORG_LEADS>0?fmtN(ORG_LEADS):'—');
+  set('gs-geral-traf',fmtN(paid)); set('gs-geral-org',fmtN(org));
+  // Orgânico
+  const pctOrg=METAS.organico>0?+(org/METAS.organico*100).toFixed(1):0;
+  updGauge('g-organico',pctOrg); set('gv-org',pctOrg.toFixed(1).replace('.',',')+'%');
+  set('gs-org-atual',fmtN(org)); set('gs-org-meta','Meta: '+fmtN(METAS.organico));
+  set('gs-org-media', ORG_DAYS>0?Math.round(org/ORG_DAYS):'—');
+  set('gs-org-falta', Math.max(0,METAS.organico-org)>0?fmtN(METAS.organico-org):'✓');
+  // Tráfego
+  const pctTraf=METAS.trafego>0?+(paid/METAS.trafego*100).toFixed(1):0;
+  updGauge('g-trafego',pctTraf); set('gv-traf',pctTraf.toFixed(1).replace('.',',')+'%');
+  set('gs-traf-atual',fmtN(paid)); set('gs-traf-meta','Meta: '+fmtN(METAS.trafego));
+  set('gs-traf-media',(paid/nDaysTot).toFixed(1));
+  set('gs-traf-cpl', paid>0?fmtR(tot.invest/paid):'—');
+  // Grupo VIP (Whatsapp)
+  const pctGrupo=METAS.grupo>0?+(WA_TOTAL/METAS.grupo*100).toFixed(1):0;
+  updGauge('g-grupo',pctGrupo); set('gv-grupo',pctGrupo.toFixed(1).replace('.',',')+'%');
+  set('gs-grupo-atual',fmtN(WA_TOTAL)); set('gs-grupo-meta','Meta: '+fmtN(METAS.grupo));
+  set('gs-grupo-tot',fmtN(WA_TOTAL)); set('gs-grupo-falta', Math.max(0,METAS.grupo-WA_TOTAL)>0?fmtN(METAS.grupo-WA_TOTAL):'✓');
+
+  // CHART captação por dia (delta da Active Campaign, dividido em orgânico + tráfego)
+  if(ORG_ROWS.length){
+    const cDates=ORG_ROWS.map(r=>r.date);
+    const paidBy=dayMap(ROWS,cDates);
+    let prev=0; const acDelta=ORG_ROWS.map(r=>{const d=Math.max(0,r.ac-prev);prev=r.ac;return d;});
+    const adsDay=cDates.map(d=>paidBy[d]?paidBy[d].leads:0);
+    const orgDay=acDelta.map((v,i)=>Math.max(0,v-adsDay[i]));
+    mkChart('c-capt-day',{type:'bar',
+      data:{labels:cDates,datasets:[
+        {label:'Orgânico',data:orgDay,backgroundColor:C.green,stack:'c',borderRadius:4},
+        {label:'Tráfego',data:adsDay,backgroundColor:C.cyan,stack:'c',borderRadius:4},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{boxWidth:10,padding:12}}},
+        scales:{x:{grid:{color:C.grid},stacked:true},y:{grid:{color:C.grid},stacked:true,ticks:{precision:0}}}}
+    });
+  }
 
   // CHART leads/dia + CPL
   const byDay=dayMap(rows,dates);
@@ -522,7 +543,7 @@ function parseMetas(txt){
     else if(k.includes('org'))m.organico=num(v);
     else if(k.includes('leads trafego')||k.includes('leads tráfego'))m.trafego=num(v);
     else if(k.includes('investimento'))m.invest=num(v);
-    else if(k.includes('orgânico captado')||k.includes('organico captado'))ORG_LEADS=num(v);
+    else if(k.includes('grupo'))m.grupo=num(v);
   });
   if(!m.invest || m.invest<=0) m.invest = m.trafego * m.cplQuente;  // célula vazia/fórmula: calcula 1620×2,20
   return m;
@@ -540,14 +561,31 @@ function loadCap(txt){
   const seen={}; ALL_DATES=[]; ROWS.slice().sort((a,b)=>a.dt-b.dt).forEach(r=>{if(!seen[r.date]){seen[r.date]=1;ALL_DATES.push(r.date);}});
   LATEST=ROWS.length?new Date(Math.max(...ROWS.map(r=>r.dt))):null;
 }
+function loadOrg(txt){
+  const rows=parseCSV(txt); if(rows.length<2)return;
+  const head=rows[0].map(h=>h.trim().toLowerCase());
+  const iD=head.findIndex(h=>h.startsWith('date')||h.startsWith('dia'));
+  const iAC=head.findIndex(h=>h.includes('active')||h.includes('campaign'));
+  const iWA=head.findIndex(h=>h.includes('whats'));
+  ORG_ROWS=[];
+  for(let i=1;i<rows.length;i++){ const r=rows[i]; if(!r||iD<0||!r[iD])continue; const dd=parseBRDate(r[iD]); if(!dd)continue;
+    const ac=num(r[iAC]), wa=iWA>=0?num(r[iWA]):0;
+    if(ac<=0 && wa<=0) continue;            // dia ainda sem dado
+    ORG_ROWS.push({date:dd.label,dt:dd.dt,ac:ac,wa:wa});
+  }
+  ORG_ROWS.sort((a,b)=>a.dt-b.dt);
+  ORG_DAYS=ORG_ROWS.length;
+  if(ORG_ROWS.length){ const last=ORG_ROWS[ORG_ROWS.length-1]; AC_TOTAL=last.ac; WA_TOTAL=last.wa; }
+}
 function showErr(msg){ const e=R('err'); e.style.display='block'; e.innerHTML=msg; }
 
-['g-trafego','g-invest','g-cpl','g-geral'].forEach((id,i)=>initGauge(id,[C.green,C.cyan,C.purple,C.orange][i]));
+['g-geral','g-organico','g-trafego','g-grupo'].forEach((id,i)=>initGauge(id,[C.orange,C.green,C.cyan,C.purple][i]));
 
-Promise.all([gfetch(TAB_CAP).catch(e=>{throw {tab:'Facebook Captacao',e}}), gfetch(TAB_METAS).catch(()=>null)])
-  .then(([capTxt,metaTxt])=>{
+Promise.all([gfetch(TAB_CAP).catch(e=>{throw {tab:'Facebook Captacao',e}}), gfetch(TAB_METAS).catch(()=>null), gfetch(TAB_ORG).catch(()=>null)])
+  .then(([capTxt,metaTxt,orgTxt])=>{
     if(metaTxt){ try{METAS=parseMetas(metaTxt);}catch(e){} }
     loadCap(capTxt);
+    if(orgTxt){ try{loadOrg(orgTxt);}catch(e){} }
     if(!ROWS.length){ showErr('A aba <b>Facebook Captacao</b> veio vazia. Confira se a planilha está compartilhada como <b>"qualquer pessoa com o link pode ver"</b>.'); }
     const d0=ALL_DATES[0]||'—', d1=ALL_DATES[ALL_DATES.length-1]||'—';
     set('h-sub','Período: '+d0+' – '+d1+'/2026 · Fonte: Google Sheets · '+ROWS.length+' linhas');
