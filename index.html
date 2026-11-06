@@ -337,6 +337,7 @@ let LATEST=null;
 let METAS={...META_FALLBACK};
 let ORG_ROWS=[];           // {date,dt,ac,wa} acumulados (aba Captacao Organico)
 let AC_TOTAL=0, WA_TOTAL=0, ORG_DAYS=0;   // total captado (Active Campaign), total grupo (Whatsapp), dias com dado
+let ORG_SHEET=0;                          // orgânico preenchido pela Eli (coluna Organico), quando houver
 let currentNDays=null, customFilterDates=null;
 const sortState={camp:{col:'leads',dir:-1}, cr:{col:'leads',dir:-1}};
 const ch={};
@@ -397,7 +398,7 @@ function render(){
   const nDaysTot=ALL_DATES.length||1;
   const paid=tot.leads;                      // leads de tráfego (pagos)
   const geral=AC_TOTAL>0?AC_TOTAL:paid;      // total captado (Active Campaign), ou fallback no pago
-  const org=Math.max(0, geral-paid);         // orgânico = total − tráfego
+  const org=ORG_SHEET>0 ? ORG_SHEET : Math.max(0, geral-paid);   // orgânico: o que a Eli preenche (col Organico), senão total − tráfego
   // Captação Geral
   const pctGer=METAS.total>0?+(geral/METAS.total*100).toFixed(1):0;
   updGauge('g-geral',pctGer); set('gv-geral',pctGer.toFixed(1).replace('.',',')+'%');
@@ -565,17 +566,19 @@ function loadOrg(txt){
   const rows=parseCSV(txt); if(rows.length<2)return;
   const head=rows[0].map(h=>h.trim().toLowerCase());
   const iD=head.findIndex(h=>h.startsWith('date')||h.startsWith('dia'));
-  const iAC=head.findIndex(h=>h.includes('active')||h.includes('campaign'));
+  const iAC=head.findIndex(h=>h.includes('campaign'));          // Active Campaign (total)
   const iWA=head.findIndex(h=>h.includes('whats'));
-  ORG_ROWS=[];
+  const iOrg=head.findIndex(h=>h.includes('organico')||h.includes('orgânico'));  // orgânico (Eli)
+  ORG_ROWS=[]; ORG_SHEET=0;
   for(let i=1;i<rows.length;i++){ const r=rows[i]; if(!r||iD<0||!r[iD])continue; const dd=parseBRDate(r[iD]); if(!dd)continue;
-    const ac=num(r[iAC]), wa=iWA>=0?num(r[iWA]):0;
-    if(ac<=0 && wa<=0) continue;            // dia ainda sem dado
-    ORG_ROWS.push({date:dd.label,dt:dd.dt,ac:ac,wa:wa});
+    const ac=num(r[iAC]), wa=iWA>=0?num(r[iWA]):0, org=iOrg>=0?num(r[iOrg]):0;
+    if(ac<=0 && wa<=0 && org<=0) continue;  // dia ainda sem dado
+    ORG_ROWS.push({date:dd.label,dt:dd.dt,ac:ac,wa:wa,org:org});
   }
   ORG_ROWS.sort((a,b)=>a.dt-b.dt);
   ORG_DAYS=ORG_ROWS.length;
   if(ORG_ROWS.length){ const last=ORG_ROWS[ORG_ROWS.length-1]; AC_TOTAL=last.ac; WA_TOTAL=last.wa; }
+  for(let i=ORG_ROWS.length-1;i>=0;i--){ if(ORG_ROWS[i].org>0){ ORG_SHEET=ORG_ROWS[i].org; break; } }  // último orgânico preenchido
 }
 function showErr(msg){ const e=R('err'); e.style.display='block'; e.innerHTML=msg; }
 
