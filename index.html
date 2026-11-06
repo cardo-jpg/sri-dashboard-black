@@ -199,6 +199,18 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
     <p class="chart-sub">Empilhado: orgânico (verde) + tráfego (ciano) — novos por dia a partir do total da Active Campaign</p>
     <div class="chart-wrap h240"><canvas id="c-capt-day"></canvas></div>
   </div>
+
+  <p class="sec">Conferência · Gerenciador × Active (ads)</p>
+  <div class="chart-card" style="margin-bottom:22px;">
+    <p class="chart-sub" style="margin-bottom:14px">Leads de ads que a Meta reporta × o que realmente entrou no Active Campaign (tag [ADS]). Até ~25% de diferença é normal (perda de rastreio). Acima disso, vale conferir pixel/UTM.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:stretch">
+      <div class="mini-kpi" style="flex:1;min-width:150px"><p class="mini-kpi-lbl">Gerenciador (Meta)</p><p class="mini-kpi-val" style="color:var(--cyan)" id="rec-ger">—</p></div>
+      <div class="mini-kpi" style="flex:1;min-width:150px"><p class="mini-kpi-lbl">Active Campaign [ADS]</p><p class="mini-kpi-val" style="color:var(--green)" id="rec-act">—</p></div>
+      <div class="mini-kpi" style="flex:1;min-width:150px"><p class="mini-kpi-lbl">Diferença</p><p class="mini-kpi-val" id="rec-gap">—</p></div>
+      <div class="mini-kpi" style="flex:2;min-width:230px"><p class="mini-kpi-lbl">Status</p><p class="mini-kpi-val" id="rec-status" style="font-size:15px;line-height:1.35;font-weight:700">—</p></div>
+    </div>
+  </div>
+
   <p class="sec">Visão Geral · Tráfego de Captação</p>
   <div class="kpi-grid">
     <div class="kpi c-cyan"><p class="kpi-lbl">Investido</p><p class="kpi-val cyan" id="k-inv">—</p><p class="kpi-note" id="k-inv-n">—</p></div>
@@ -338,6 +350,7 @@ let METAS={...META_FALLBACK};
 let ORG_ROWS=[];           // {date,dt,ac,wa} acumulados (aba Captacao Organico)
 let AC_TOTAL=0, WA_TOTAL=0, ORG_DAYS=0;   // total captado (Active Campaign), total grupo (Whatsapp), dias com dado
 let ORG_SHEET=0;                          // orgânico preenchido pela Eli (coluna Organico), quando houver
+let ADS_ACTIVE=0;                         // ads no Active Campaign (tag [ADS]) que a Eli preenche
 let currentNDays=null, customFilterDates=null;
 const sortState={camp:{col:'leads',dir:-1}, cr:{col:'leads',dir:-1}};
 const ch={};
@@ -421,6 +434,25 @@ function render(){
   updGauge('g-grupo',pctGrupo); set('gv-grupo',pctGrupo.toFixed(1).replace('.',',')+'%');
   set('gs-grupo-atual',fmtN(WA_TOTAL)); set('gs-grupo-meta','Meta: '+fmtN(METAS.grupo));
   set('gs-grupo-tot',fmtN(WA_TOTAL)); set('gs-grupo-falta', Math.max(0,METAS.grupo-WA_TOTAL)>0?fmtN(METAS.grupo-WA_TOTAL):'✓');
+
+  // CONFERÊNCIA gerenciador (Meta) × active (Eli)
+  const ger=paid;              // o que a Meta reporta = tráfego
+  set('rec-ger', fmtN(ger));
+  if(ADS_ACTIVE>0){
+    set('rec-act', fmtN(ADS_ACTIVE));
+    const gap = ger>0 ? (ger-ADS_ACTIVE)/ger*100 : 0;   // positivo = active abaixo do gerenciador
+    const ab = Math.abs(gap);
+    set('rec-gap', ab.toFixed(0)+'%'); R('rec-gap').style.color = ab<=25?'var(--green)':(ab<=40?'var(--yellow)':'var(--red)');
+    const dir = gap>=0?'abaixo':'acima';
+    let msg,col;
+    if(ab<=25){ msg='✓ Normal — Active '+ab.toFixed(0)+'% '+dir+' do gerenciador'; col='var(--green)'; }
+    else if(ab<=40){ msg='⚠ De olho — Active '+ab.toFixed(0)+'% '+dir+', acima do habitual'; col='var(--yellow)'; }
+    else { msg='⚠ Divergência alta ('+ab.toFixed(0)+'%) — conferir pixel/UTM e a tag [ADS] no Active Campaign'; col='var(--red)'; }
+    set('rec-status', msg); R('rec-status').style.color=col;
+  } else {
+    set('rec-act','—'); set('rec-gap','—');
+    set('rec-status','Aguardando a Eli preencher a coluna "Ads - Active" na planilha'); R('rec-status').style.color='var(--sub)';
+  }
 
   // CHART captação por dia (delta da Active Campaign, dividido em orgânico + tráfego)
   if(ORG_ROWS.length){
@@ -569,16 +601,18 @@ function loadOrg(txt){
   const iAC=head.findIndex(h=>h.includes('campaign'));          // Active Campaign (total)
   const iWA=head.findIndex(h=>h.includes('whats'));
   const iOrg=head.findIndex(h=>h.includes('organico')||h.includes('orgânico'));  // orgânico (Eli)
-  ORG_ROWS=[]; ORG_SHEET=0;
+  const iAct=head.findIndex(h=>h.includes('ads')&&h.includes('active'));         // ads no Active Campaign (Eli)
+  ORG_ROWS=[]; ORG_SHEET=0; ADS_ACTIVE=0;
   for(let i=1;i<rows.length;i++){ const r=rows[i]; if(!r||iD<0||!r[iD])continue; const dd=parseBRDate(r[iD]); if(!dd)continue;
-    const ac=num(r[iAC]), wa=iWA>=0?num(r[iWA]):0, org=iOrg>=0?num(r[iOrg]):0;
-    if(ac<=0 && wa<=0 && org<=0) continue;  // dia ainda sem dado
-    ORG_ROWS.push({date:dd.label,dt:dd.dt,ac:ac,wa:wa,org:org});
+    const ac=num(r[iAC]), wa=iWA>=0?num(r[iWA]):0, org=iOrg>=0?num(r[iOrg]):0, aa=iAct>=0?num(r[iAct]):0;
+    if(ac<=0 && wa<=0 && org<=0 && aa<=0) continue;  // dia ainda sem dado
+    ORG_ROWS.push({date:dd.label,dt:dd.dt,ac:ac,wa:wa,org:org,aa:aa});
   }
   ORG_ROWS.sort((a,b)=>a.dt-b.dt);
   ORG_DAYS=ORG_ROWS.length;
   if(ORG_ROWS.length){ const last=ORG_ROWS[ORG_ROWS.length-1]; AC_TOTAL=last.ac; WA_TOTAL=last.wa; }
   for(let i=ORG_ROWS.length-1;i>=0;i--){ if(ORG_ROWS[i].org>0){ ORG_SHEET=ORG_ROWS[i].org; break; } }  // último orgânico preenchido
+  for(let i=ORG_ROWS.length-1;i>=0;i--){ if(ORG_ROWS[i].aa>0){ ADS_ACTIVE=ORG_ROWS[i].aa; break; } }   // último ads-active preenchido
 }
 function showErr(msg){ const e=R('err'); e.style.display='block'; e.innerHTML=msg; }
 
