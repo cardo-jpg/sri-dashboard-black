@@ -47,10 +47,10 @@ header{background:linear-gradient(135deg,#0b1525,#0d2040);border-bottom:1px soli
 .gauge-pct.cyan{color:var(--cyan);} .gauge-pct.green{color:var(--green);} .gauge-pct.purple{color:var(--purple);} .gauge-pct.orange{color:var(--orange);}
 .gauge-pct-lbl{font-size:11px;color:var(--sub);letter-spacing:1.5px;text-transform:uppercase;}
 .gauge-range{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);margin-top:2px;padding:0 4px;}
-.gauge-stats{display:flex;justify-content:center;gap:28px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.gauge-stats{display:flex;justify-content:space-around;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
 .gauge-stats>div{text-align:center;}
 .gauge-stats span{display:block;font-size:11px;color:var(--sub);letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;}
-.gauge-stats strong{font-size:20px;font-weight:800;color:var(--text);}
+.gauge-stats strong{font-size:17px;font-weight:800;color:var(--text);}
 .gauge-stats .pace-val{color:var(--yellow);}
 .container{max-width:1400px;margin:0 auto;padding:24px 36px 0;overflow-x:hidden;}
 .sec{font-size:12px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--sub);margin:0 0 14px;}
@@ -141,7 +141,7 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
 <!-- GAUGES -->
 <div class="gauge-section">
   <div class="gauge-outer">
-    <p class="sec">Progresso da Captação</p>
+    <p class="sec" style="display:flex;justify-content:space-between;align-items:baseline">Progresso da Captação <span id="dias-restantes" style="font-weight:600;letter-spacing:0;text-transform:none;color:var(--yellow)">—</span></p>
     <div class="gauge-grid">
       <div class="gauge-card gc-orange">
         <p class="gauge-ttl">Captação Geral</p>
@@ -150,8 +150,9 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
         </div>
         <div class="gauge-range"><span id="gs-geral-atual">—</span><span id="gs-geral-meta">Meta: —</span></div>
         <div class="gauge-stats">
-          <div><span>Tráfego</span><strong id="gs-geral-traf">—</strong></div>
-          <div><span>Orgânico</span><strong id="gs-geral-org">—</strong></div>
+          <div><span>Média/dia</span><strong id="gs-geral-media">—</strong></div>
+          <div><span>Precisa/dia</span><strong class="pace-val" id="gs-geral-pace">—</strong></div>
+          <div><span>Faltam</span><strong id="gs-geral-falta">—</strong></div>
         </div>
       </div>
       <div class="gauge-card gc-green">
@@ -162,7 +163,8 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
         <div class="gauge-range"><span id="gs-org-atual">—</span><span id="gs-org-meta">Meta: —</span></div>
         <div class="gauge-stats">
           <div><span>Média/dia</span><strong id="gs-org-media">—</strong></div>
-          <div><span>Faltam</span><strong class="pace-val" id="gs-org-falta">—</strong></div>
+          <div><span>Precisa/dia</span><strong class="pace-val" id="gs-org-pace">—</strong></div>
+          <div><span>Faltam</span><strong id="gs-org-falta">—</strong></div>
         </div>
       </div>
       <div class="gauge-card gc-cyan">
@@ -173,7 +175,8 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
         <div class="gauge-range"><span id="gs-traf-atual">—</span><span id="gs-traf-meta">Meta: —</span></div>
         <div class="gauge-stats">
           <div><span>Média/dia</span><strong id="gs-traf-media">—</strong></div>
-          <div><span>CPL</span><strong id="gs-traf-cpl">—</strong></div>
+          <div><span>Precisa/dia</span><strong class="pace-val" id="gs-traf-pace">—</strong></div>
+          <div><span>Faltam</span><strong id="gs-traf-falta">—</strong></div>
         </div>
       </div>
       <div class="gauge-card gc-purple">
@@ -183,8 +186,9 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
         </div>
         <div class="gauge-range"><span id="gs-grupo-atual">—</span><span id="gs-grupo-meta">Meta: 2.000</span></div>
         <div class="gauge-stats">
-          <div><span>No grupo</span><strong id="gs-grupo-tot">—</strong></div>
-          <div><span>Faltam</span><strong class="pace-val" id="gs-grupo-falta">—</strong></div>
+          <div><span>Média/dia</span><strong id="gs-grupo-media">—</strong></div>
+          <div><span>Precisa/dia</span><strong class="pace-val" id="gs-grupo-pace">—</strong></div>
+          <div><span>Faltam</span><strong id="gs-grupo-falta">—</strong></div>
         </div>
       </div>
     </div>
@@ -408,32 +412,29 @@ function render(){
 
   // GAUGES (sempre sobre o TOTAL, nao filtrado)
   const tot=sum(ROWS);
-  const nDaysTot=ALL_DATES.length||1;
   const paid=tot.leads;                      // leads de tráfego (pagos)
   const geral=AC_TOTAL>0?AC_TOTAL:paid;      // total captado (Active Campaign), ou fallback no pago
   const org=ORG_SHEET>0 ? ORG_SHEET : Math.max(0, geral-paid);   // orgânico: o que a Eli preenche (col Organico), senão total − tráfego
-  // Captação Geral
-  const pctGer=METAS.total>0?+(geral/METAS.total*100).toFixed(1):0;
-  updGauge('g-geral',pctGer); set('gv-geral',pctGer.toFixed(1).replace('.',',')+'%');
-  set('gs-geral-atual',fmtN(geral)); set('gs-geral-meta','Meta: '+fmtN(METAS.total));
-  set('gs-geral-traf',fmtN(paid)); set('gs-geral-org',fmtN(org));
-  // Orgânico
-  const pctOrg=METAS.organico>0?+(org/METAS.organico*100).toFixed(1):0;
-  updGauge('g-organico',pctOrg); set('gv-org',pctOrg.toFixed(1).replace('.',',')+'%');
-  set('gs-org-atual',fmtN(org)); set('gs-org-meta','Meta: '+fmtN(METAS.organico));
-  set('gs-org-media', ORG_DAYS>0?Math.round(org/ORG_DAYS):'—');
-  set('gs-org-falta', Math.max(0,METAS.organico-org)>0?fmtN(METAS.organico-org):'✓');
-  // Tráfego
-  const pctTraf=METAS.trafego>0?+(paid/METAS.trafego*100).toFixed(1):0;
-  updGauge('g-trafego',pctTraf); set('gv-traf',pctTraf.toFixed(1).replace('.',',')+'%');
-  set('gs-traf-atual',fmtN(paid)); set('gs-traf-meta','Meta: '+fmtN(METAS.trafego));
-  set('gs-traf-media',(paid/nDaysTot).toFixed(1));
-  set('gs-traf-cpl', paid>0?fmtR(tot.invest/paid):'—');
-  // Grupo VIP (Whatsapp)
-  const pctGrupo=METAS.grupo>0?+(WA_TOTAL/METAS.grupo*100).toFixed(1):0;
-  updGauge('g-grupo',pctGrupo); set('gv-grupo',pctGrupo.toFixed(1).replace('.',',')+'%');
-  set('gs-grupo-atual',fmtN(WA_TOTAL)); set('gs-grupo-meta','Meta: '+fmtN(METAS.grupo));
-  set('gs-grupo-tot',fmtN(WA_TOTAL)); set('gs-grupo-falta', Math.max(0,METAS.grupo-WA_TOTAL)>0?fmtN(METAS.grupo-WA_TOTAL):'✓');
+  // dias: captação 01/11 -> 16/11 (abertura das vendas)
+  const START=new Date(2026,10,1), CAMP_END=new Date(2026,10,16), HOJE=new Date();
+  const diasDecorridos=Math.max(1, ORG_DAYS, ALL_DATES.length);                 // dias já com dado
+  const diasRestantes=Math.max(1, Math.ceil((CAMP_END-HOJE)/864e5));            // dias até abrir as vendas
+  set('dias-restantes', diasRestantes+(diasRestantes===1?' dia':' dias')+' p/ 16/11');
+  function gauge(g, canvasId, atual, meta){
+    const pct=meta>0?+(atual/meta*100).toFixed(1):0;
+    updGauge(canvasId,pct); set('gv-'+g, pct.toFixed(1).replace('.',',')+'%');
+    set('gs-'+g+'-atual', fmtN(atual)); set('gs-'+g+'-meta','Meta: '+fmtN(meta));
+    set('gs-'+g+'-media', Math.round(atual/diasDecorridos));
+    const need=(meta-atual)/diasRestantes;
+    const pEl=R('gs-'+g+'-pace'); set('gs-'+g+'-pace', need<=0?'✓':fmtN(Math.round(need)));
+    if(pEl) pEl.style.color = need<=0?'var(--green)':'var(--yellow)';
+    const falta=Math.max(0,meta-atual);
+    set('gs-'+g+'-falta', falta>0?fmtN(falta):'✓');
+  }
+  gauge('geral','g-geral', geral, METAS.total);
+  gauge('org','g-organico', org, METAS.organico);
+  gauge('traf','g-trafego', paid, METAS.trafego);
+  gauge('grupo','g-grupo', WA_TOTAL, METAS.grupo);
 
   // CONFERÊNCIA gerenciador (Meta) × active (Eli)
   const ger=paid;              // o que a Meta reporta = tráfego
