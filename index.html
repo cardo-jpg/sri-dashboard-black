@@ -7,6 +7,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 :root{
@@ -93,6 +94,12 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
 .ig-btn:hover{background:rgba(0,198,255,0.18);border-color:var(--cyan);}
 .ig-btn svg{width:12px;height:12px;}
 .note{text-align:center;font-size:13px;color:var(--sub);margin-top:16px;padding:0 36px;}
+.tab-btn{padding:7px 16px;font-size:14px;font-weight:700;color:var(--sub);background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;}
+.tab-btn:hover{color:var(--text);border-color:var(--sub2);}
+.tab-btn.active{color:var(--bg);background:var(--cyan);border-color:var(--cyan);}
+.tab-panel{display:none;} .tab-panel.active{display:block;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:18px;}
+@media(max-width:1000px){.row3{grid-template-columns:1fr;}}
 #err{display:none;max-width:1400px;margin:18px auto;padding:16px 20px;background:rgba(255,107,107,0.08);border:1px solid var(--red);border-radius:10px;color:#ffd1d1;font-size:14px;}
 @media(max-width:1200px){
   .gauge-grid{grid-template-columns:repeat(2,1fr);}
@@ -114,7 +121,8 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
     <div class="h-sub" id="h-sub">Carregando dados…</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-    <span class="badge">Facebook Ads</span>
+    <button class="tab-btn active" onclick="switchTab('captacao',this)">📊 Captação</button>
+    <button class="tab-btn" onclick="switchTab('pesquisa',this)">📋 Pesquisa</button>
     <span class="badge live" id="live-badge">ao vivo</span>
   </div>
 </header>
@@ -196,6 +204,7 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
   </div>
 </div>
 
+<div id="panel-captacao" class="tab-panel active">
 <div class="container">
   <p class="sec" style="padding-top:8px">Captação por Dia · Orgânico + Tráfego</p>
   <div class="chart-card" style="margin-bottom:22px;">
@@ -308,7 +317,50 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
   </div>
 </div>
 
-<p class="note" id="footnote">Dados reais · "[PV] Fonte de Dados SRI Black" · aba Facebook Captacao</p>
+</div><!-- /panel-captacao -->
+
+<div id="panel-pesquisa" class="tab-panel">
+  <div class="container">
+    <p class="sec" style="padding-top:8px">Pesquisa de Inscritos · Grupo VIP</p>
+    <div class="kpi-grid" style="grid-template-columns:repeat(6,1fr)">
+      <div class="kpi c-purple"><p class="kpi-lbl">Respostas</p><p class="kpi-val purple" id="ps-kpi-n">—</p><p class="kpi-note">Total de inscritas</p></div>
+      <div class="kpi c-purple"><p class="kpi-lbl">Mulheres</p><p class="kpi-val purple" id="ps-kpi-mulh">—</p><p class="kpi-note">do total</p></div>
+      <div class="kpi c-cyan"><p class="kpi-lbl">Inglês Confiante</p><p class="kpi-val cyan" id="ps-kpi-flu">—</p><p class="kpi-note">Se sente confiante</p></div>
+      <div class="kpi c-green"><p class="kpi-lbl">Moram no Brasil</p><p class="kpi-val green" id="ps-kpi-br">—</p><p class="kpi-note">do total</p></div>
+      <div class="kpi c-yellow"><p class="kpi-lbl">Têm Filhos</p><p class="kpi-val yellow" id="ps-kpi-fil">—</p><p class="kpi-note">do total</p></div>
+      <div class="kpi c-purple"><p class="kpi-lbl">Estado + Respostas</p><p class="kpi-val white" id="ps-kpi-est">—</p><p class="kpi-note">Maior concentração</p></div>
+    </div>
+    <p class="sec">Perfil Demográfico</p>
+    <div class="row3">
+      <div class="chart-card"><p class="chart-ttl">Gênero</p><p class="chart-sub">Distribuição</p><div class="chart-wrap h200"><canvas id="ps-genero"></canvas></div></div>
+      <div class="chart-card"><p class="chart-ttl">Faixa de Idade</p><p class="chart-sub">Distribuição etária</p><div class="chart-wrap h200"><canvas id="ps-idade"></canvas></div></div>
+      <div class="chart-card"><p class="chart-ttl">Onde Moram</p><p class="chart-sub">Brasil vs. exterior</p><div class="chart-wrap h200"><canvas id="ps-mora"></canvas></div></div>
+    </div>
+    <p class="sec">Renda, Formação &amp; Idiomas</p>
+    <div class="row3">
+      <div class="chart-card"><p class="chart-ttl">Faixa Salarial</p><p class="chart-sub">Renda mensal declarada</p><div class="chart-wrap h240"><canvas id="ps-salario"></canvas></div></div>
+      <div class="chart-card"><p class="chart-ttl">Formação Acadêmica</p><p class="chart-sub">Nível de escolaridade</p><div class="chart-wrap h240"><canvas id="ps-formacao"></canvas></div></div>
+      <div class="chart-card"><p class="chart-ttl">Nível de Inglês</p><p class="chart-sub">Auto-avaliação</p><div class="chart-wrap h240"><canvas id="ps-ingles"></canvas></div></div>
+    </div>
+    <p class="sec">Área de Atuação</p>
+    <div class="chart-card" style="margin-bottom:18px;">
+      <p class="chart-ttl">Área de Atuação</p><p class="chart-sub">Tamanho = frequência de respostas</p>
+      <div id="ps-area" style="min-height:360px;background:#131f30;border-radius:8px;overflow:hidden;line-height:0;"></div>
+    </div>
+    <p class="sec">Engajamento &amp; Localização</p>
+    <div class="row2b">
+      <div class="chart-card"><p class="chart-ttl">Estado (Brasil)</p><p class="chart-sub">Top 10 estados com mais inscritas</p><div class="chart-wrap h260"><canvas id="ps-estado"></canvas></div></div>
+      <div class="chart-card"><p class="chart-ttl">Há Quanto Tempo Segue no Instagram</p><p class="chart-sub">Tempo de relacionamento com o perfil</p><div class="chart-wrap h260"><canvas id="ps-instagram"></canvas></div></div>
+    </div>
+    <p class="sec">Perfil Familiar &amp; Renda Extra</p>
+    <div class="row2b">
+      <div class="chart-card"><p class="chart-ttl">Tem Filhos?</p><p class="chart-sub">Distribuição</p><div class="chart-wrap h240"><canvas id="ps-filhos"></canvas></div></div>
+      <div class="chart-card"><p class="chart-ttl">Sobre Renda Extra</p><p class="chart-sub">Experiência com renda extra</p><div class="chart-wrap h240"><canvas id="ps-renda"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<p class="note" id="footnote">Dados reais · "[PV] Fonte de Dados SRI Black" (captação) · Pesquisa: formulário de credenciamento do grupo</p>
 
 <script>
 /* ===== CONFIG ===== */
@@ -617,13 +669,102 @@ function loadOrg(txt){
 }
 function showErr(msg){ const e=R('err'); e.style.display='block'; e.innerHTML=msg; }
 
+/* ===== PESQUISA (igual aos outros lançamentos) ===== */
+const SURVEY_ID='1pg3NNFiEwrjDRf1985A4SsrYnHi-E48lrmGcGKQWebs';
+const SURVEY_ROWS=[]; let _wcReady=false;
+const psPal=['#a78bfa','#c084fc','#818cf8','#60a5fa','#34d399','#fbbf24','#f87171','#fb923c','#a3e635','#f472b6'];
+const SC={ idade:'Qual é a sua idade?', genero:'Com qual gênero você se identifica?', mora:'Você mora:',
+  estado:'Se você está no Brasil, qual é o seu estado?', salario:'Qual a sua faixa salarial (não vamos divulgar essa informação)',
+  formacao:'Qual é a sua formação?', ingles:'Você fala inglês?', area:'Em qual área você atua hoje?',
+  filhos:'Tem filhos?', instagram:'Há quanto tempo você me segue no Instagram?', renda:'Quando o assunto é fazer renda extra, você:' };
+function loadSurvey(txt){
+  const rows=parseCSV(txt); if(rows.length<2)return;
+  const hdr=rows[0].map(h=>h.trim()); SURVEY_ROWS.length=0;
+  for(let i=1;i<rows.length;i++){ const r=rows[i]; if(!r||!r.join('').trim())continue;
+    const o={}; hdr.forEach((h,j)=>{ o[h]=((r[j]!=null?r[j]:'')+'').replace(/\s+/g,' ').trim(); }); SURVEY_ROWS.push(o); }
+}
+function countBy(rows,key,minPct=0){
+  const c={}; rows.forEach(r=>{const v=(r[key]||'').trim(); if(v)c[v]=(c[v]||0)+1;});
+  if(minPct>0){ const total=Object.values(c).reduce((s,v)=>s+v,0)||1; let outros=0;
+    Object.keys(c).forEach(k=>{ if(Math.round(c[k]/total*100)<minPct){outros+=c[k];delete c[k];} });
+    if(Math.round(outros/total*100)>=1)c['Outros']=outros; } return c;
+}
+function sortedEntries(counts,order){
+  if(order){ const inO=order.filter(k=>counts[k]!=null&&counts[k]>0).map(k=>[k,counts[k]]);
+    const rest=Object.entries(counts).filter(([k])=>!order.includes(k)).sort((a,b)=>b[1]-a[1]);
+    return inO.concat(rest); }  // valores fora da ordem entram no fim (nunca somem)
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+}
+function psPct(n,tot){ return tot>0?(n/tot*100).toFixed(1)+'%':'—'; }
+function renderPesquisa(){
+  const rows=SURVEY_ROWS, n=rows.length; if(!n)return;
+  const mulheres=rows.filter(r=>(r[SC.genero]||'').toLowerCase().includes('femin')).length;
+  const fluentes=rows.filter(r=>(r[SC.ingles]||'').toLowerCase().includes('confiante')).length;
+  const brasil=rows.filter(r=>(r[SC.mora]||'').toLowerCase().includes('brasil')).length;
+  const filhos=rows.filter(r=>(r[SC.filhos]||'').toLowerCase()==='sim').length;
+  const estCounts=countBy(rows,SC.estado);
+  const topEst=(Object.entries(estCounts).sort((a,b)=>b[1]-a[1])[0]||['—'])[0];
+  set('ps-kpi-n',fmtN(n)); set('ps-kpi-mulh',psPct(mulheres,n)); set('ps-kpi-flu',psPct(fluentes,n));
+  set('ps-kpi-br',psPct(brasil,n)); set('ps-kpi-fil',psPct(filhos,n)); set('ps-kpi-est',topEst);
+  function psBar(id,counts,order,limit=15){
+    const entries=sortedEntries(counts,order).slice(0,limit); const total=entries.reduce((s,e)=>s+e[1],0)||1;
+    mkChart(id,{type:'bar',data:{labels:entries.map(e=>e[0]),datasets:[{data:entries.map(e=>e[1]),backgroundColor:psPal.slice(0,entries.length),borderRadius:5,
+      datalabels:{anchor:'end',align:'start',color:'#fff',font:{size:11,weight:'bold'},formatter:v=>Math.round(v/total*100)+'%'}}]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},datalabels:{display:true}},scales:{x:{grid:{color:C.grid}},y:{grid:{color:C.grid},ticks:{font:{size:10}}}}}});
+  }
+  function psDonut(id,counts){
+    const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]); const tot=entries.reduce((s,e)=>s+e[1],0)||1;
+    mkChart(id,{type:'doughnut',data:{labels:entries.map(e=>e[0]),datasets:[{data:entries.map(e=>e[1]),backgroundColor:psPal,borderColor:'#131f30',borderWidth:3,hoverOffset:8}]},
+      options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{
+        legend:{position:'bottom',labels:{boxWidth:10,padding:8,generateLabels:chart=>chart.data.labels.map((lbl,i)=>({text:lbl+'  '+Math.round(chart.data.datasets[0].data[i]/tot*100)+'%',fillStyle:psPal[i%psPal.length],strokeStyle:'#131f30',lineWidth:1,index:i,fontColor:'#a0b4c8'}))}},
+        tooltip:{callbacks:{label:ctx=>' '+ctx.parsed+' resp. ('+psPct(ctx.parsed,n)+')'}},
+        datalabels:{display:ctx=>Math.round(ctx.dataset.data[ctx.dataIndex]/tot*100)>=5,color:'#fff',font:{size:12,weight:'bold'},formatter:v=>Math.round(v/tot*100)+'%'}}}});
+  }
+  psDonut('ps-genero',countBy(rows,SC.genero,1));
+  psBar('ps-idade',countBy(rows,SC.idade),['Até 19','19 a 24 anos','25 a 29 anos','30 a 35 anos','36 a 39 anos','40 a 44 anos','45 a 50 anos','50+']);
+  psDonut('ps-mora',countBy(rows,SC.mora,1));
+  const salMap={'Até 1500 reais':'Até R$1,5k','De 1500 a 2 mil reais':'R$1,5k–2k','De 2 a 3 mil reais':'R$2k–3k','De 3 a 5 mil reais':'R$3k–5k','De 5 a 10 mil reais':'R$5k–10k','Mais de 10 mil reais por mês':'Acima R$10k'};
+  const salRaw=countBy(rows,SC.salario), salCounts={}; Object.entries(salMap).forEach(([f,ab])=>{ if(salRaw[f])salCounts[ab]=salRaw[f]; });
+  psDonut('ps-salario',salCounts);
+  psBar('ps-formacao',countBy(rows,SC.formacao),['Ensino médio completo','Ensino superior INCOMPLETO','Ensino superior COMPLETO','Pós-graduação INCOMPLETA','Pós-graduação COMPLETA']);
+  psBar('ps-ingles',countBy(rows,SC.ingles),['Zero','Básico','Intermediário','Consigo me comunicar, mas com um pouco de dificuldade','Me sinto confiante para falar inglês']);
+  psBar('ps-estado',estCounts,null,10);
+  psBar('ps-instagram',countBy(rows,SC.instagram),['Menos de 1 mês','Entre 1 e 3 meses','Entre 3 e 6 meses','Entre 6 meses e 1 ano','Mais de 1 ano','Mais de 2 anos']);
+  psDonut('ps-filhos',countBy(rows,SC.filhos,1));
+  psBar('ps-renda',countBy(rows,SC.renda));
+  _wcReady=true;
+  if(R('panel-pesquisa').classList.contains('active')) setTimeout(renderWordCloud,50);
+}
+function renderWordCloud(){
+  if(!_wcReady||!SURVEY_ROWS.length||typeof WordCloud==='undefined')return;
+  const rawList=Object.entries(countBy(SURVEY_ROWS,SC.area)).map(([w,c])=>[w.split('(')[0].trim(),c]).filter(([w])=>w.length>1).sort((a,b)=>b[1]-a[1]).slice(0,50);
+  const container=R('ps-area'); if(!container||!rawList.length)return;
+  const wc=['#a78bfa','#818cf8','#60a5fa','#00c6ff','#00e5a0','#c084fc','#7dd3fc','#6ee7b7','#93c5fd','#a5b4fc'];
+  const colorMap={}; rawList.forEach(([w],i)=>{colorMap[w]=wc[i%wc.length];});
+  const maxC=Math.max(...rawList.map(([,c])=>c)); const wordList=rawList.map(([w,c])=>[w,Math.round(10+(c/maxC)*36)]);
+  let canvas=container.querySelector('canvas'); if(!canvas){canvas=document.createElement('canvas');container.innerHTML='';container.appendChild(canvas);}
+  const cw=container.offsetWidth||800, ch=360; canvas.width=cw; canvas.height=ch; canvas.style.cssText='width:100%;height:'+ch+'px;display:block;';
+  WordCloud(canvas,{list:wordList,gridSize:Math.max(6,Math.round(cw/80)),weightFactor:cw/520,fontFamily:"'Inter', sans-serif",fontWeight:'700',color:w=>colorMap[w]||wc[0],rotateRatio:0.3,rotationSteps:2,backgroundColor:'#131f30',drawOutOfBound:false,shrinkToFit:true,shape:'circle'});
+}
+function switchTab(name,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  const pn=R('panel-'+name); if(pn)pn.classList.add('active'); if(btn)btn.classList.add('active');
+  const hide=name==='pesquisa';
+  document.querySelector('.gauge-section').style.display=hide?'none':'';
+  document.querySelector('.filter-bar').style.display=hide?'none':'';
+  if(name==='pesquisa') setTimeout(renderWordCloud,60);
+}
+
 ['g-geral','g-organico','g-trafego','g-grupo'].forEach((id,i)=>initGauge(id,[C.orange,C.green,C.cyan,C.purple][i]));
 
-Promise.all([gfetch(TAB_CAP).catch(e=>{throw {tab:'Facebook Captacao',e}}), gfetch(TAB_METAS).catch(()=>null), gfetch(TAB_ORG).catch(()=>null)])
-  .then(([capTxt,metaTxt,orgTxt])=>{
+const SURVEY_URL=`https://docs.google.com/spreadsheets/d/${SURVEY_ID}/gviz/tq?tqx=out:csv&_=`+Date.now();
+Promise.all([gfetch(TAB_CAP).catch(e=>{throw {tab:'Facebook Captacao',e}}), gfetch(TAB_METAS).catch(()=>null), gfetch(TAB_ORG).catch(()=>null), fetch(SURVEY_URL,{cache:'no-cache'}).then(r=>r.text()).catch(()=>null)])
+  .then(([capTxt,metaTxt,orgTxt,surveyTxt])=>{
     if(metaTxt){ try{METAS=parseMetas(metaTxt);}catch(e){} }
     loadCap(capTxt);
     if(orgTxt){ try{loadOrg(orgTxt);}catch(e){} }
+    if(surveyTxt){ try{ loadSurvey(surveyTxt); renderPesquisa(); }catch(e){ console.warn('pesquisa',e); } }
     if(!ROWS.length){ showErr('A aba <b>Facebook Captacao</b> veio vazia. Confira se a planilha está compartilhada como <b>"qualquer pessoa com o link pode ver"</b>.'); }
     const d0=ALL_DATES[0]||'—', d1=ALL_DATES[ALL_DATES.length-1]||'—';
     set('h-sub','Período: '+d0+' – '+d1+'/2026 · Fonte: Google Sheets · '+ROWS.length+' linhas');
