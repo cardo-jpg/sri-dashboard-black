@@ -507,13 +507,15 @@ function render(){
     set('rec-status','Aguardando a Eli preencher a coluna "Ads - Active" na planilha'); R('rec-status').style.color='var(--sub)';
   }
 
-  // CHART captação por dia (delta da Active Campaign, dividido em orgânico + tráfego)
-  if(ORG_ROWS.length){
-    const cDates=ORG_ROWS.map(r=>r.date);
+  // CHART captação por dia — união das datas das 2 abas (tráfego do Facebook Captacao + orgânico do AC)
+  if(ORG_ROWS.length || ROWS.length){
+    const dtMap={}; ROWS.forEach(r=>{dtMap[r.date]=r.dt;}); ORG_ROWS.forEach(r=>{dtMap[r.date]=r.dt;});
+    const cDates=Object.keys(dtMap).sort((a,b)=>dtMap[a]-dtMap[b]);
+    const acByDate={}; let prev=0;
+    ORG_ROWS.slice().sort((a,b)=>a.dt-b.dt).forEach(r=>{ acByDate[r.date]=Math.max(0,r.ac-prev); prev=r.ac; });  // orgânico só nas datas com AC preenchido
     const paidBy=dayMap(ROWS,cDates);
-    let prev=0; const acDelta=ORG_ROWS.map(r=>{const d=Math.max(0,r.ac-prev);prev=r.ac;return d;});
     const adsDay=cDates.map(d=>paidBy[d]?paidBy[d].leads:0);
-    const orgDay=acDelta.map((v,i)=>Math.max(0,v-adsDay[i]));
+    const orgDay=cDates.map((d,i)=> acByDate[d]!=null ? Math.max(0,acByDate[d]-adsDay[i]) : 0);
     mkChart('c-capt-day',{type:'bar',
       data:{labels:cDates,datasets:[
         {label:'Orgânico',data:orgDay,backgroundColor:C.green,stack:'c',borderRadius:4},
