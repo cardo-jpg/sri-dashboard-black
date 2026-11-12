@@ -42,6 +42,8 @@ header{background:linear-gradient(135deg,#0b1525,#0d2040);border-bottom:1px soli
 .gc-cyan{border-top:2px solid var(--cyan);} .gc-green{border-top:2px solid var(--green);}
 .gc-purple{border-top:2px solid var(--purple);} .gc-orange{border-top:2px solid var(--orange);}
 .gauge-ttl{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--sub);margin-bottom:6px;}
+.gauge-badge{display:none;}
+.gauge-badge.on{display:inline-block;margin-left:5px;font-size:9px;font-weight:800;letter-spacing:0;text-transform:none;color:#0b1525;background:var(--yellow);border-radius:10px;padding:1px 6px;vertical-align:middle;}
 .gauge-canvas-wrap{position:relative;height:120px;margin:0 auto;max-width:260px;}
 .gauge-overlay{position:absolute;bottom:0;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;width:150px;}
 .gauge-pct{font-size:32px;font-weight:800;line-height:1;}
@@ -152,7 +154,7 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
     <p class="sec" style="display:flex;justify-content:space-between;align-items:baseline">Progresso da Captação <span id="dias-restantes" style="font-weight:600;letter-spacing:0;text-transform:none;color:var(--yellow)">—</span></p>
     <div class="gauge-grid">
       <div class="gauge-card gc-orange">
-        <p class="gauge-ttl">Captação Geral</p>
+        <p class="gauge-ttl">Captação Geral<span class="gauge-badge" id="badge-geral"></span></p>
         <div class="gauge-canvas-wrap"><canvas id="g-geral"></canvas>
           <div class="gauge-overlay"><div class="gauge-pct orange" id="gv-geral">—</div><div class="gauge-pct-lbl">da meta total</div></div>
         </div>
@@ -164,7 +166,7 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
         </div>
       </div>
       <div class="gauge-card gc-green">
-        <p class="gauge-ttl">Orgânico</p>
+        <p class="gauge-ttl">Orgânico<span class="gauge-badge" id="badge-org"></span></p>
         <div class="gauge-canvas-wrap"><canvas id="g-organico"></canvas>
           <div class="gauge-overlay"><div class="gauge-pct green" id="gv-org">—</div><div class="gauge-pct-lbl">da meta</div></div>
         </div>
@@ -188,7 +190,7 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
         </div>
       </div>
       <div class="gauge-card gc-purple">
-        <p class="gauge-ttl">Grupo VIP (WhatsApp)</p>
+        <p class="gauge-ttl">Grupo VIP (WhatsApp)<span class="gauge-badge" id="badge-grupo"></span></p>
         <div class="gauge-canvas-wrap"><canvas id="g-grupo"></canvas>
           <div class="gauge-overlay"><div class="gauge-pct purple" id="gv-grupo">—</div><div class="gauge-pct-lbl">da meta</div></div>
         </div>
@@ -487,6 +489,11 @@ function render(){
   gauge('org','g-organico', org, METAS.organico);
   gauge('traf','g-trafego', paid, METAS.trafego);
   gauge('grupo','g-grupo', WA_TOTAL, METAS.grupo);
+  // selo "parcial" quando o Facebook Captacao já tem um dia mais novo que o orgânico lançado pela Eli
+  const latestOrgDt = ORG_ROWS.length ? ORG_ROWS[ORG_ROWS.length-1].dt : null;
+  const orgBehind = LATEST && latestOrgDt && LATEST > latestOrgDt;
+  const faltaDia = ALL_DATES.length ? ALL_DATES[ALL_DATES.length-1] : '';
+  ['geral','org','grupo'].forEach(g=>{ const el=R('badge-'+g); if(el){ el.textContent=orgBehind?('⏳ parcial · falta '+faltaDia):''; el.classList.toggle('on',!!orgBehind); } });
 
   // CONFERÊNCIA gerenciador (Meta) × active (Eli)
   const ger=paid;              // o que a Meta reporta = tráfego
