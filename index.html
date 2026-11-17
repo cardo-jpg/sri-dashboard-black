@@ -125,6 +125,7 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
     <button class="tab-btn active" onclick="switchTab('captacao',this)">📊 Captação</button>
     <button class="tab-btn" onclick="switchTab('vendas',this)">💰 Vendas</button>
+    <button class="tab-btn" onclick="switchTab('lembrete',this)">📣 Lembrete</button>
     <button class="tab-btn" onclick="switchTab('pesquisa',this)">📋 Pesquisa</button>
     <span class="badge live" id="live-badge">ao vivo</span>
   </div>
@@ -322,6 +323,35 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
 
 </div><!-- /panel-captacao -->
 
+<div id="panel-lembrete" class="tab-panel">
+  <div class="container">
+    <p class="sec" style="padding-top:8px">Campanhas de Lembrete · Alcance (base já inscrita)</p>
+    <div class="kpi-grid" style="grid-template-columns:repeat(6,1fr)">
+      <div class="kpi c-cyan"><p class="kpi-lbl">Investido</p><p class="kpi-val cyan" id="l-inv">—</p><p class="kpi-note">Lembrete + Ao vivo</p></div>
+      <div class="kpi c-green"><p class="kpi-lbl">Alcance</p><p class="kpi-val green" id="l-alc">—</p><p class="kpi-note">Pessoas alcançadas (soma)</p></div>
+      <div class="kpi c-purple"><p class="kpi-lbl">Impressões</p><p class="kpi-val purple" id="l-imp">—</p><p class="kpi-note">Total</p></div>
+      <div class="kpi c-yellow"><p class="kpi-lbl">Frequência</p><p class="kpi-val yellow" id="l-freq">—</p><p class="kpi-note">Média por pessoa</p></div>
+      <div class="kpi c-orange"><p class="kpi-lbl">Cliques</p><p class="kpi-val orange" id="l-clicks">—</p><p class="kpi-note">Link Clicks</p></div>
+      <div class="kpi c-cyan"><p class="kpi-lbl">CPM</p><p class="kpi-val white" id="l-cpm">—</p><p class="kpi-note">Custo/mil impressões</p></div>
+    </div>
+    <div class="row2b">
+      <div class="chart-card"><p class="chart-ttl">Investimento por Campanha</p><p class="chart-sub">Lembrete × Ao vivo</p><div class="chart-wrap h260"><canvas id="c-l-donut"></canvas></div></div>
+      <div class="chart-card"><p class="chart-ttl">Alcance por Criativo</p><p class="chart-sub">Pessoas alcançadas</p><div class="chart-wrap h260"><canvas id="c-l-bar"></canvas></div></div>
+    </div>
+    <p class="sec">Detalhamento por Criativo</p>
+    <div class="tbl-card">
+      <table>
+        <thead><tr>
+          <th>Criativo</th><th>Campanha</th>
+          <th class="td-r">Investido</th><th class="td-r">Impressões</th><th class="td-r">Alcance</th><th class="td-r">Freq.</th><th class="td-r">Cliques</th><th>Anúncio</th>
+        </tr></thead>
+        <tbody id="l-cr-tbody"></tbody>
+        <tfoot id="l-cr-tfoot"></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
 <div id="panel-pesquisa" class="tab-panel">
   <div class="container">
     <p class="sec" style="padding-top:8px">Pesquisa de Inscritos · Grupo VIP</p>
@@ -429,6 +459,7 @@ const TAB_CAP='Facebook Captacao';
 const TAB_METAS='Metas';
 const TAB_ORG='Captacao Organico';
 const TAB_VENDAS='Vendas';
+const TAB_LEMBRETE='Lembrete';
 /* Metas fallback (se a aba nao carregar) */
 const META_FALLBACK={cplQuente:2.20, total:3120, organico:1500, trafego:1620, invest:3564, grupo:2000};
 
@@ -713,7 +744,8 @@ function loadCap(txt){
   const iDate=idx('date'),iCamp=idx('campanha'),iPub=idx('publico'),iCr=idx('criativo'),iUrl=idx('url'),iInv=idx('investido'),iImp=idx('impress'),iCli=idx('clique'),iLead=idx('lead'),iLp=idx('visual'),iSt=idx('status');
   ROWS=[];
   for(let i=1;i<rows.length;i++){ const r=rows[i]; if(!r||!r[iDate])continue; const dd=parseBRDate(r[iDate]); if(!dd)continue;
-    ROWS.push({date:dd.label,dkey:dd.key,dt:dd.dt,camp:(r[iCamp]||'').trim(),pub:(r[iPub]||'').trim(),criativo:(r[iCr]||'').trim(),url:(r[iUrl]||'').trim(),
+    const _camp=(r[iCamp]||'').trim(); if(/alcance|lembrete|aovivo|ao_vivo/i.test(_camp)) continue;  // lembrete tem aba propria
+    ROWS.push({date:dd.label,dkey:dd.key,dt:dd.dt,camp:_camp,pub:(r[iPub]||'').trim(),criativo:(r[iCr]||'').trim(),url:(r[iUrl]||'').trim(),
       invest:num(r[iInv]),imp:num(r[iImp]),clicks:num(r[iCli]),leads:num(r[iLead]),lp:num(r[iLp]),status:(iSt>=0?(r[iSt]||'').trim().toUpperCase():'')});
   }
   const seen={}; ALL_DATES=[]; ROWS.slice().sort((a,b)=>a.dt-b.dt).forEach(r=>{if(!seen[r.date]){seen[r.date]=1;ALL_DATES.push(r.date);}});
@@ -800,6 +832,51 @@ function renderVendas(){
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:true}},scales:{x:{grid:{color:C.grid},ticks:{precision:0}},y:{grid:{display:false}}}}});
   vTable('v-camp',byCamp,false);
   vTable('v-cr',vGroup(rows,'criativo'),true);
+}
+/* ===== LEMBRETE (Alcance) ===== */
+let L_ROWS=[];
+function loadLembrete(txt){
+  const rows=parseCSV(txt); if(!rows.length)return;
+  const head=rows[0].map(h=>h.trim().toLowerCase());
+  const f=fn=>head.findIndex(fn);
+  const iDate=f(h=>h.startsWith('date')||h.startsWith('data')),iCamp=f(h=>h.startsWith('campanha')),
+    iPub=f(h=>h.startsWith('publico')||h.startsWith('público')),iCr=f(h=>h.startsWith('criativo')),
+    iInv=f(h=>h.startsWith('investido')||h.startsWith('investimento')),iImp=f(h=>h.startsWith('impress')),
+    iAlc=f(h=>h.startsWith('alcance')),iCli=f(h=>h.startsWith('clique')),iLink=f(h=>h.startsWith('link')),iSt=f(h=>h.startsWith('status'));
+  L_ROWS=[];
+  for(let i=1;i<rows.length;i++){ const r=rows[i]; if(!r||!(r[iCamp]||'').trim())continue;
+    const dd=parseAnyDate(r[iDate]);
+    L_ROWS.push({date:dd?dd.label:'',dt:dd?dd.dt:null,camp:(r[iCamp]||'').trim(),pub:(r[iPub]||'').trim(),
+      criativo:(r[iCr]||'').trim(),url:(iLink>=0?(r[iLink]||'').trim():''),status:(iSt>=0?(r[iSt]||'').trim().toUpperCase():''),
+      invest:num(r[iInv]),imp:num(r[iImp]),alc:iAlc>=0?num(r[iAlc]):0,clicks:iCli>=0?num(r[iCli]):0});
+  }
+}
+function lShort(c){ return c.replace(/^PA_FB\d+_/,'').replace(/_Q$/,'').replace(/_/g,' '); }
+function renderLembrete(){
+  const rows=L_ROWS;
+  const t=rows.reduce((a,r)=>({invest:a.invest+r.invest,imp:a.imp+r.imp,alc:a.alc+r.alc,clicks:a.clicks+r.clicks}),{invest:0,imp:0,alc:0,clicks:0});
+  set('l-inv',fmtR(t.invest)); set('l-imp',fmtN(t.imp)); set('l-alc',fmtN(t.alc)); set('l-clicks',fmtN(t.clicks));
+  set('l-freq', t.alc>0?(t.imp/t.alc).toFixed(2).replace('.',','):'—');
+  set('l-cpm', t.imp>0?fmtR(t.invest/t.imp*1000):'—');
+  const byC={}; rows.forEach(r=>{byC[r.camp]=(byC[r.camp]||0)+r.invest;});
+  const cK=Object.keys(byC).sort((a,b)=>byC[b]-byC[a]);
+  mkChart('c-l-donut',{type:'doughnut',data:{labels:cK.map(lShort),datasets:[{data:cK.map(k=>byC[k]),backgroundColor:palette,borderColor:'#131f30',borderWidth:3,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8,font:{size:11}}},tooltip:{callbacks:{label:c=>' '+fmtR(c.parsed)}}}}});
+  const byCr={}; rows.forEach(r=>{const k=r.criativo;if(!byCr[k])byCr[k]={alc:0,invest:0,imp:0,clicks:0,camp:r.camp,url:r.url};
+    const g=byCr[k];g.alc+=r.alc;g.invest+=r.invest;g.imp+=r.imp;g.clicks+=r.clicks;if(!g.url&&r.url)g.url=r.url;});
+  const crA=Object.entries(byCr).map(([k,g])=>({...g,key:k})).sort((a,b)=>b.alc-a.alc);
+  mkChart('c-l-bar',{type:'bar',data:{labels:crA.map(g=>prettyCr(g.key)),datasets:[{label:'Alcance',data:crA.map(g=>g.alc),backgroundColor:C.green,borderRadius:5}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:C.grid},ticks:{precision:0}},y:{grid:{display:false},ticks:{font:{size:11}}}}}});
+  const tb=R('l-cr-tbody'); if(tb){ tb.innerHTML='';
+    crA.forEach(g=>{
+      const freq=g.alc>0?(g.imp/g.alc).toFixed(2).replace('.',','):'—';
+      const ig=g.url?`<a class="ig-btn" href="${fixIg(g.url)}" target="_blank">${igIcon} Ver</a>`:'—';
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td class="td-criativo">${prettyCr(g.key)}</td><td class="td-pub">${lShort(g.camp)}</td><td class="td-r">${fmtR(g.invest)}</td><td class="td-r">${fmtN(g.imp)}</td><td class="td-r">${fmtN(g.alc)}</td><td class="td-r">${freq}</td><td class="td-r">${fmtN(g.clicks)}</td><td>${ig}</td>`;
+      tb.appendChild(tr);
+    });
+    R('l-cr-tfoot').innerHTML=`<tr><td>TOTAL</td><td></td><td class="td-r">${fmtR(t.invest)}</td><td class="td-r">${fmtN(t.imp)}</td><td class="td-r">${fmtN(t.alc)}</td><td class="td-r">${t.alc>0?(t.imp/t.alc).toFixed(2).replace('.',','):'—'}</td><td class="td-r">${fmtN(t.clicks)}</td><td></td></tr>`;
+  }
 }
 function showErr(msg){ const e=R('err'); e.style.display='block'; e.innerHTML=msg; }
 
@@ -889,18 +966,20 @@ function switchTab(name,btn){
   document.querySelector('.filter-bar').style.display=isCap?'':'none';
   if(name==='pesquisa') setTimeout(renderWordCloud,60);
   if(name==='vendas') renderVendas();
+  if(name==='lembrete') renderLembrete();
 }
 
 ['g-geral','g-organico','g-trafego','g-grupo'].forEach((id,i)=>initGauge(id,[C.orange,C.green,C.cyan,C.purple][i]));
 
 const SURVEY_URL=`https://docs.google.com/spreadsheets/d/${SURVEY_ID}/gviz/tq?tqx=out:csv&_=`+Date.now();
-Promise.all([gfetch(TAB_CAP).catch(e=>{throw {tab:'Facebook Captacao',e}}), gfetch(TAB_METAS).catch(()=>null), gfetch(TAB_ORG).catch(()=>null), fetch(SURVEY_URL,{cache:'no-cache'}).then(r=>r.text()).catch(()=>null), gfetch(TAB_VENDAS).catch(()=>null)])
-  .then(([capTxt,metaTxt,orgTxt,surveyTxt,vendasTxt])=>{
+Promise.all([gfetch(TAB_CAP).catch(e=>{throw {tab:'Facebook Captacao',e}}), gfetch(TAB_METAS).catch(()=>null), gfetch(TAB_ORG).catch(()=>null), fetch(SURVEY_URL,{cache:'no-cache'}).then(r=>r.text()).catch(()=>null), gfetch(TAB_VENDAS).catch(()=>null), gfetch(TAB_LEMBRETE).catch(()=>null)])
+  .then(([capTxt,metaTxt,orgTxt,surveyTxt,vendasTxt,lembreteTxt])=>{
     if(metaTxt){ try{METAS=parseMetas(metaTxt);}catch(e){} }
     loadCap(capTxt);
     if(orgTxt){ try{loadOrg(orgTxt);}catch(e){} }
     if(surveyTxt){ try{ loadSurvey(surveyTxt); renderPesquisa(); }catch(e){ console.warn('pesquisa',e); } }
     if(vendasTxt){ try{ loadVendas(vendasTxt); renderVendas(); }catch(e){ console.warn('vendas',e); } }
+    if(lembreteTxt){ try{ loadLembrete(lembreteTxt); renderLembrete(); }catch(e){ console.warn('lembrete',e); } }
     if(!ROWS.length){ showErr('A aba <b>Facebook Captacao</b> veio vazia. Confira se a planilha está compartilhada como <b>"qualquer pessoa com o link pode ver"</b>.'); }
     const d0=ALL_DATES[0]||'—', d1=ALL_DATES[ALL_DATES.length-1]||'—';
     set('h-sub','Período: '+d0+' – '+d1+'/2026 · Fonte: Google Sheets · '+ROWS.length+' linhas');
