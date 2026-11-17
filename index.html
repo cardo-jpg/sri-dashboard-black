@@ -124,6 +124,7 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
   </div>
   <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
     <button class="tab-btn active" onclick="switchTab('captacao',this)">📊 Captação</button>
+    <button class="tab-btn" onclick="switchTab('vendas',this)">💰 Vendas</button>
     <button class="tab-btn" onclick="switchTab('pesquisa',this)">📋 Pesquisa</button>
     <span class="badge live" id="live-badge">ao vivo</span>
   </div>
@@ -362,7 +363,63 @@ tfoot td{padding:9px 10px;font-weight:800;border-top:2px solid var(--border);fon
   </div>
 </div>
 
-<p class="note" id="footnote">Dados reais · "[PV] Fonte de Dados SRI Black" (captação) · Pesquisa: formulário de credenciamento do grupo</p>
+<div id="panel-vendas" class="tab-panel">
+  <div class="container">
+    <p class="sec" style="padding-top:8px">Visão Geral · Vendas (Black)</p>
+    <div class="kpi-grid">
+      <div class="kpi c-cyan"><p class="kpi-lbl">Investido</p><p class="kpi-val cyan" id="v-inv">—</p><p class="kpi-note">Campanhas de venda</p></div>
+      <div class="kpi c-purple"><p class="kpi-lbl">Impressões</p><p class="kpi-val purple" id="v-imp">—</p><p class="kpi-note">Total</p></div>
+      <div class="kpi c-yellow"><p class="kpi-lbl">Cliques</p><p class="kpi-val yellow" id="v-clicks">—</p><p class="kpi-note">Link Clicks</p></div>
+      <div class="kpi c-orange"><p class="kpi-lbl">CTR</p><p class="kpi-val orange" id="v-ctr">—</p><p class="kpi-note">Taxa de clique</p></div>
+      <div class="kpi c-cyan"><p class="kpi-lbl">Visitas na LP</p><p class="kpi-val white" id="v-visitas">—</p><p class="kpi-note">Landing page views</p></div>
+      <div class="kpi c-yellow"><p class="kpi-lbl">Checkout</p><p class="kpi-val white" id="v-checkout">—</p><p class="kpi-note">Iniciaram compra</p></div>
+      <div class="kpi c-green"><p class="kpi-lbl">Vendas</p><p class="kpi-val green" id="v-vendas">—</p><p class="kpi-note">Compras rastreadas</p></div>
+      <div class="kpi c-green"><p class="kpi-lbl">Faturamento</p><p class="kpi-val green" id="v-fat">—</p><p class="kpi-note" id="v-roas">ROAS —</p></div>
+    </div>
+    <p style="font-size:11px;color:var(--sub);margin:-12px 0 18px;font-style:italic">Carrinho, Checkout, Vendas e Faturamento vêm do pixel 1119 / Hotmart. Enquanto a compra não é confirmada pelo rastreio, aparecem zerados — a venda real fica no Hotmart.</p>
+
+    <div class="row2b">
+      <div class="chart-card">
+        <p class="chart-ttl">Investimento por Campanha</p>
+        <p class="chart-sub">% do investido nas campanhas de venda</p>
+        <div class="chart-wrap h260"><canvas id="c-v-donut"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <p class="chart-ttl">Funil de Conversão</p>
+        <p class="chart-sub">Visitas → Carrinho → Checkout → Vendas</p>
+        <div class="chart-wrap h260"><canvas id="c-v-funil"></canvas></div>
+      </div>
+    </div>
+
+    <p class="sec">Detalhamento por Campanha</p>
+    <div class="tbl-card">
+      <table>
+        <thead><tr>
+          <th>Campanha</th><th>Público</th>
+          <th class="td-r">Investido</th><th class="td-r">Impressões</th><th class="td-r">Cliques</th><th class="td-r">CTR</th>
+          <th class="td-r">Visitas</th><th class="td-r">Carrinho</th><th class="td-r">Checkout</th><th class="td-r">Vendas</th><th class="td-r">Faturamento</th>
+        </tr></thead>
+        <tbody id="v-camp-tbody"></tbody>
+        <tfoot id="v-camp-tfoot"></tfoot>
+      </table>
+    </div>
+
+    <p class="sec" style="margin-top:22px">Detalhamento por Criativo</p>
+    <div class="tbl-card">
+      <table>
+        <thead><tr>
+          <th>Criativo</th><th>Público</th>
+          <th class="td-r">Investido</th><th class="td-r">Impressões</th><th class="td-r">Cliques</th><th class="td-r">CTR</th>
+          <th class="td-r">Visitas</th><th class="td-r">Carrinho</th><th class="td-r">Checkout</th><th class="td-r">Vendas</th><th class="td-r">Faturamento</th><th>Anúncio</th>
+        </tr></thead>
+        <tbody id="v-cr-tbody"></tbody>
+        <tfoot id="v-cr-tfoot"></tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<p class="note" id="footnote">Dados reais · "[PV] Fonte de Dados SRI Black" (captação + vendas) · Pesquisa: formulário de credenciamento do grupo</p>
 
 <script>
 /* ===== CONFIG ===== */
@@ -371,6 +428,7 @@ const GVT=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:cs
 const TAB_CAP='Facebook Captacao';
 const TAB_METAS='Metas';
 const TAB_ORG='Captacao Organico';
+const TAB_VENDAS='Vendas';
 /* Metas fallback (se a aba nao carregar) */
 const META_FALLBACK={cplQuente:2.20, total:3120, organico:1500, trafego:1620, invest:3564, grupo:2000};
 
@@ -419,6 +477,11 @@ function parseBRDate(s){ // '01/11/2026' -> {label:'01/11', key, dt}
   const m=String(s).trim().match(/(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/); if(!m)return null;
   const d=+m[1], mo=+m[2], y=m[3]?(+m[3]<100?2000+ +m[3]:+m[3]):2026;
   return {label:String(d).padStart(2,'0')+'/'+String(mo).padStart(2,'0'), key:y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0'), dt:new Date(y,mo-1,d)};
+}
+function parseAnyDate(s){ s=String(s==null?'':s).trim();
+  const iso=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(iso){ const y=+iso[1],mo=+iso[2],d=+iso[3]; return {label:String(d).padStart(2,'0')+'/'+String(mo).padStart(2,'0'), dt:new Date(y,mo-1,d)}; }
+  return parseBRDate(s);
 }
 function getFilteredDates(nDays){
   if(customFilterDates)return customFilterDates;
@@ -676,6 +739,68 @@ function loadOrg(txt){
   for(let i=ORG_ROWS.length-1;i>=0;i--){ if(ORG_ROWS[i].org>0){ ORG_SHEET=ORG_ROWS[i].org; break; } }  // último orgânico preenchido
   for(let i=ORG_ROWS.length-1;i>=0;i--){ if(ORG_ROWS[i].aa>0){ ADS_ACTIVE=ORG_ROWS[i].aa; break; } }   // último ads-active preenchido
 }
+/* ===== VENDAS ===== */
+let V_ROWS=[];
+function loadVendas(txt){
+  const rows=parseCSV(txt); if(!rows.length)return;
+  const head=rows[0].map(h=>h.trim().toLowerCase());
+  const f=fn=>head.findIndex(fn);
+  const iDate=f(h=>h.startsWith('data')), iCamp=f(h=>h.startsWith('campanha')),
+    iPub=f(h=>h.startsWith('publico')||h.startsWith('público')), iCr=f(h=>h.startsWith('criativo')),
+    iInv=f(h=>h.startsWith('investimento')||h.startsWith('investido')), iImp=f(h=>h.startsWith('impress')),
+    iCli=f(h=>h.startsWith('clique')), iVis=f(h=>h.startsWith('visita')),
+    iCar=f(h=>h.includes('carrinho')&&!h.includes('valor')), iCk=f(h=>h.startsWith('checkout')),
+    iVen=f(h=>h.startsWith('vendas')||h.startsWith('venda')), iFat=f(h=>h.startsWith('faturamento')),
+    iLink=f(h=>h.startsWith('link'));
+  V_ROWS=[];
+  for(let i=1;i<rows.length;i++){ const r=rows[i]; if(!r||!(r[iCamp]||'').trim())continue;
+    const dd=parseAnyDate(r[iDate]);
+    V_ROWS.push({date:dd?dd.label:'',dt:dd?dd.dt:null,camp:(r[iCamp]||'').trim(),pub:(r[iPub]||'').trim(),
+      criativo:(r[iCr]||'').trim(),url:(iLink>=0?(r[iLink]||'').trim():''),
+      invest:num(r[iInv]),imp:num(r[iImp]),clicks:num(r[iCli]),visitas:num(r[iVis]),
+      carrinho:iCar>=0?num(r[iCar]):0,checkout:iCk>=0?num(r[iCk]):0,vendas:iVen>=0?num(r[iVen]):0,fat:iFat>=0?num(r[iFat]):0});
+  }
+}
+function vShort(c){ return c.replace(/^PA_FB\d+_Vendas_/,'').replace(/_Q$/,'').replace(/_/g,' '); }
+function vAgg(rows){ return rows.reduce((a,r)=>({invest:a.invest+r.invest,imp:a.imp+r.imp,clicks:a.clicks+r.clicks,visitas:a.visitas+r.visitas,carrinho:a.carrinho+r.carrinho,checkout:a.checkout+r.checkout,vendas:a.vendas+r.vendas,fat:a.fat+r.fat}),{invest:0,imp:0,clicks:0,visitas:0,carrinho:0,checkout:0,vendas:0,fat:0}); }
+function vGroup(rows,key){ const m={}; rows.forEach(r=>{const k=r[key]||'—'; if(!m[k])m[k]={invest:0,imp:0,clicks:0,visitas:0,carrinho:0,checkout:0,vendas:0,fat:0,pub:r.pub,url:r.url};
+  const g=m[k]; g.invest+=r.invest;g.imp+=r.imp;g.clicks+=r.clicks;g.visitas+=r.visitas;g.carrinho+=r.carrinho;g.checkout+=r.checkout;g.vendas+=r.vendas;g.fat+=r.fat; if(!g.url&&r.url)g.url=r.url;}); return m; }
+function vTable(which,groups,isCr){
+  const arr=Object.entries(groups).map(([k,g])=>({...g,key:k})).sort((a,b)=>b.invest-a.invest);
+  const tb=R(which+'-tbody'); if(!tb)return; tb.innerHTML='';
+  arr.forEach(g=>{
+    const name=isCr?`<td class="td-criativo">${prettyCr(g.key)}</td><td class="td-pub">${(g.pub||'').replace('Conjunto ','')}</td>`
+                   :`<td style="font-weight:600">${vShort(g.key)}</td><td class="td-pub">${(g.pub||'').replace('Conjunto ','')}</td>`;
+    const ctr=g.imp>0?(g.clicks/g.imp*100).toFixed(2)+'%':'—';
+    const ven=g.vendas>0?`<span style="color:var(--green);font-weight:700">${fmtN(g.vendas)}</span>`:'<span style="color:var(--sub2)">0</span>';
+    const fat=g.fat>0?`<span style="color:var(--green)">${fmtR(g.fat)}</span>`:'<span style="color:var(--sub2)">—</span>';
+    const tail=isCr?`<td>${g.url?`<a class="ig-btn" href="${fixIg(g.url)}" target="_blank">${igIcon} Ver</a>`:'—'}</td>`:'';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`${name}<td class="td-r">${fmtR(g.invest)}</td><td class="td-r">${fmtN(g.imp)}</td><td class="td-r">${fmtN(g.clicks)}</td><td class="td-r">${ctr}</td><td class="td-r">${fmtN(g.visitas)}</td><td class="td-r">${fmtN(g.carrinho)}</td><td class="td-r">${fmtN(g.checkout)}</td><td class="td-r">${ven}</td><td class="td-r">${fat}</td>${tail}`;
+    tb.appendChild(tr);
+  });
+  const t=vAgg(arr); const ctr=t.imp>0?(t.clicks/t.imp*100).toFixed(2)+'%':'—'; const tail=isCr?'<td></td>':'';
+  R(which+'-tfoot').innerHTML=`<tr><td>TOTAL</td><td></td><td class="td-r">${fmtR(t.invest)}</td><td class="td-r">${fmtN(t.imp)}</td><td class="td-r">${fmtN(t.clicks)}</td><td class="td-r">${ctr}</td><td class="td-r">${fmtN(t.visitas)}</td><td class="td-r">${fmtN(t.carrinho)}</td><td class="td-r">${fmtN(t.checkout)}</td><td class="td-r" style="color:var(--green)">${fmtN(t.vendas)}</td><td class="td-r" style="color:var(--green)">${t.fat>0?fmtR(t.fat):'—'}</td>${tail}</tr>`;
+}
+function renderVendas(){
+  const rows=V_ROWS, t=vAgg(rows);
+  set('v-inv',fmtR(t.invest)); set('v-imp',fmtN(t.imp)); set('v-clicks',fmtN(t.clicks));
+  set('v-ctr', t.imp>0?(t.clicks/t.imp*100).toFixed(2)+'%':'—');
+  set('v-visitas',fmtN(t.visitas)); set('v-checkout',fmtN(t.checkout));
+  set('v-vendas',fmtN(t.vendas)); set('v-fat',fmtR(t.fat));
+  set('v-roas', 'ROAS '+(t.invest>0?(t.fat/t.invest).toFixed(2).replace('.',',')+'x':'—'));
+  const byCamp=vGroup(rows,'camp');
+  const campKeys=Object.keys(byCamp).filter(k=>byCamp[k].invest>0).sort((a,b)=>byCamp[b].invest-byCamp[a].invest);
+  mkChart('c-v-donut',{type:'doughnut',
+    data:{labels:campKeys.map(vShort),datasets:[{data:campKeys.map(k=>byCamp[k].invest),backgroundColor:palette,borderColor:'#131f30',borderWidth:3,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8,font:{size:11}}},tooltip:{callbacks:{label:c=>' '+fmtR(c.parsed)}}}}});
+  mkChart('c-v-funil',{type:'bar',
+    data:{labels:['Visitas','Carrinho','Checkout','Vendas'],datasets:[{data:[t.visitas,t.carrinho,t.checkout,t.vendas],backgroundColor:[C.cyan,C.yellow,C.orange,C.green],borderRadius:5,
+      datalabels:{anchor:'end',align:'end',color:'#fff',font:{weight:'bold'},formatter:v=>fmtN(v)}}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:true}},scales:{x:{grid:{color:C.grid},ticks:{precision:0}},y:{grid:{display:false}}}}});
+  vTable('v-camp',byCamp,false);
+  vTable('v-cr',vGroup(rows,'criativo'),true);
+}
 function showErr(msg){ const e=R('err'); e.style.display='block'; e.innerHTML=msg; }
 
 /* ===== PESQUISA (igual aos outros lançamentos) ===== */
@@ -759,21 +884,23 @@ function switchTab(name,btn){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   const pn=R('panel-'+name); if(pn)pn.classList.add('active'); if(btn)btn.classList.add('active');
-  const hide=name==='pesquisa';
-  document.querySelector('.gauge-section').style.display=hide?'none':'';
-  document.querySelector('.filter-bar').style.display=hide?'none':'';
+  const isCap=name==='captacao';
+  document.querySelector('.gauge-section').style.display=isCap?'':'none';
+  document.querySelector('.filter-bar').style.display=isCap?'':'none';
   if(name==='pesquisa') setTimeout(renderWordCloud,60);
+  if(name==='vendas') renderVendas();
 }
 
 ['g-geral','g-organico','g-trafego','g-grupo'].forEach((id,i)=>initGauge(id,[C.orange,C.green,C.cyan,C.purple][i]));
 
 const SURVEY_URL=`https://docs.google.com/spreadsheets/d/${SURVEY_ID}/gviz/tq?tqx=out:csv&_=`+Date.now();
-Promise.all([gfetch(TAB_CAP).catch(e=>{throw {tab:'Facebook Captacao',e}}), gfetch(TAB_METAS).catch(()=>null), gfetch(TAB_ORG).catch(()=>null), fetch(SURVEY_URL,{cache:'no-cache'}).then(r=>r.text()).catch(()=>null)])
-  .then(([capTxt,metaTxt,orgTxt,surveyTxt])=>{
+Promise.all([gfetch(TAB_CAP).catch(e=>{throw {tab:'Facebook Captacao',e}}), gfetch(TAB_METAS).catch(()=>null), gfetch(TAB_ORG).catch(()=>null), fetch(SURVEY_URL,{cache:'no-cache'}).then(r=>r.text()).catch(()=>null), gfetch(TAB_VENDAS).catch(()=>null)])
+  .then(([capTxt,metaTxt,orgTxt,surveyTxt,vendasTxt])=>{
     if(metaTxt){ try{METAS=parseMetas(metaTxt);}catch(e){} }
     loadCap(capTxt);
     if(orgTxt){ try{loadOrg(orgTxt);}catch(e){} }
     if(surveyTxt){ try{ loadSurvey(surveyTxt); renderPesquisa(); }catch(e){ console.warn('pesquisa',e); } }
+    if(vendasTxt){ try{ loadVendas(vendasTxt); renderVendas(); }catch(e){ console.warn('vendas',e); } }
     if(!ROWS.length){ showErr('A aba <b>Facebook Captacao</b> veio vazia. Confira se a planilha está compartilhada como <b>"qualquer pessoa com o link pode ver"</b>.'); }
     const d0=ALL_DATES[0]||'—', d1=ALL_DATES[ALL_DATES.length-1]||'—';
     set('h-sub','Período: '+d0+' – '+d1+'/2026 · Fonte: Google Sheets · '+ROWS.length+' linhas');
